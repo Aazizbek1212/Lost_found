@@ -1,0 +1,290 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arkana - Ro'yxatdan O'tish</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <!-- Main CSS -->
+    <link rel="stylesheet" href="{% static 'styles/register.css' %}">
+</head>
+<body>
+    <!-- LEFT PANEL (o'zgarishsiz) -->
+    <div class="left-panel">
+        <!-- ... -->
+        <div class="bg-number">1</div>  <!-- 3 -> 1 qilib o'zgartirildi -->
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="right-panel">
+        <div class="form-container">
+            <!-- STEP INDICATOR - 1 STEPGA MOSLANGAN -->
+            <div class="form-header">
+                <div class="step-indicator">
+                    <div class="step active" id="s1"></div>  <!-- onclick olib tashlandi -->
+                    <!-- Qolgan step indicatorlar o'chirildi -->
+                </div>
+                <div class="form-title" id="form-title">Hisob ochish</div>
+                <div class="form-subtitle" id="form-subtitle">Ro'yxatdan o'tish uchun ma'lumotlaringizni kiriting</div>
+            </div>
+
+            <!-- DJANGO REGISTRATION FORM -->
+            <form method="POST" action="{% url 'register' %}" id="registrationForm">
+                {% csrf_token %}
+                
+                <!-- XATOLIKLAR (o'zgarishsiz) -->
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="error-msg" style="color: var(--rust); margin-bottom: 20px; padding: 10px; border: 1px solid var(--rust); background: rgba(192,57,43,0.1);">
+                            📍 {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                {% if form.errors %}
+                    <div class="error-msg" style="color: var(--rust); margin-bottom: 20px; padding: 10px; border: 1px solid var(--rust); background: rgba(192,57,43,0.1);">
+                        📍 Iltimos, quyidagi xatoliklarni to'g'rilang:
+                        <ul style="margin-top: 8px; margin-left: 20px;">
+                            {% for field, errors in form.errors.items %}
+                                {% for error in errors %}
+                                    <li>{{ field }}: {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+
+                <!-- STEP 1 (barcha fieldlar) -->
+                <div class="form-step active" id="step1">
+                    <!-- Ism va Familiya -->
+                    <div class="field-row">
+                        <div class="field">
+                            <label>Ism *</label>
+                            <div class="input-wrap">
+                                <span class="icon">◈</span>
+                                <input type="text" id="fname" name="first_name" placeholder="Jasur" value="{{ form.first_name.value|default:'' }}" required />
+                            </div>
+                            <div class="field-error" id="fname-err">Ism kiritilishi shart</div>
+                            {% if form.first_name.errors %}
+                                <div class="field-error visible">{{ form.first_name.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="field">
+                            <label>Familiya *</label>
+                            <div class="input-wrap">
+                                <span class="icon">◈</span>
+                                <input type="text" id="lname" name="last_name" placeholder="Karimov" value="{{ form.last_name.value|default:'' }}" required />
+                            </div>
+                            <div class="field-error" id="lname-err">Familiya kiritilishi shart</div>
+                            {% if form.last_name.errors %}
+                                <div class="field-error visible">{{ form.last_name.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="field">
+                        <label>Elektron pochta *</label>
+                        <div class="input-wrap">
+                            <span class="icon">✉</span>
+                            <input type="email" id="email" name="email" placeholder="siz@misol.uz" value="{{ form.email.value|default:'' }}" required />
+                        </div>
+                        <div class="field-error" id="email-err">To'g'ri email kiriting</div>
+                        {% if form.email.errors %}
+                            <div class="field-error visible">{{ form.email.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Telefon -->
+                    <div class="field">
+                        <label>Telefon raqam</label>
+                        <div class="input-wrap">
+                            <span class="icon">☏</span>
+                            <input type="tel" id="phone" name="phone" placeholder="+998 90 123 45 67" value="{{ form.phone.value|default:'' }}" />
+                        </div>
+                        <div class="field-error" id="phone-err">Telefon raqam kiritilishi shart</div>
+                    </div>
+
+                    <!-- Jinsi -->
+                    <div class="field">
+                        <label>Jinsi *</label>
+                        <div class="radio-group">
+                            <div class="radio-card">
+                                <input type="radio" name="gender" id="male" value="erkak" {% if form.gender.value == 'erkak' %}checked{% endif %} required>
+                                <label for="male">♂ Erkak</label>
+                            </div>
+                            <div class="radio-card">
+                                <input type="radio" name="gender" id="female" value="ayol" {% if form.gender.value == 'ayol' %}checked{% endif %} required>
+                                <label for="female">♀ Ayol</label>
+                            </div>
+                        </div>
+                        <div class="field-error" id="gender-err">Jinsingizni tanlang</div>
+                        {% if form.gender.errors %}
+                            <div class="field-error visible">{{ form.gender.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Username -->
+                    <div class="field">
+                        <label>Foydalanuvchi nomi *</label>
+                        <div class="input-wrap">
+                            <span class="icon">@</span>
+                            <input type="text" id="username" name="username" placeholder="jasur_karimov" value="{{ form.username.value|default:'' }}" required />
+                        </div>
+                        <div class="field-error" id="username-err">Foydalanuvchi nomini kiriting</div>
+                        {% if form.username.errors %}
+                            <div class="field-error visible">{{ form.username.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Parol -->
+                    <div class="field">
+                        <label>Parol *</label>
+                        <div class="input-wrap">
+                            <span class="icon">⚿</span>
+                            <input type="password" id="pass" name="password1" placeholder="Kamida 8 ta belgi" oninput="checkStrength(this.value)" required />
+                            <span class="toggle-pass" onclick="togglePass('pass', this)">👁</span>
+                        </div>
+                        <div class="strength-bar">
+                            <div class="strength-segment" id="seg1"></div>
+                            <div class="strength-segment" id="seg2"></div>
+                            <div class="strength-segment" id="seg3"></div>
+                            <div class="strength-segment" id="seg4"></div>
+                        </div>
+                        <div class="strength-text" id="strength-text">Parol kuchini tekshirmoqda...</div>
+                        <div class="field-error" id="pass-err">Kamida 8 ta belgi kiriting</div>
+                        {% if form.password1.errors %}
+                            <div class="field-error visible">{{ form.password1.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Parolni takrorlash -->
+                    <div class="field">
+                        <label>Parolni takrorlang *</label>
+                        <div class="input-wrap">
+                            <span class="icon">⚿</span>
+                            <input type="password" id="pass2" name="password2" placeholder="Parolni tasdiqlang" oninput="checkPasswordMatch()" required />
+                            <span class="toggle-pass" onclick="togglePass('pass2', this)">👁</span>
+                        </div>
+                        <div class="field-error" id="pass2-err">Parollar mos kelmadi</div>
+                        {% if form.password2.errors %}
+                            <div class="field-error visible">{{ form.password2.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Terms -->
+                    <label class="check-field">
+                        <input type="checkbox" id="terms" name="terms" required>
+                        <div class="check-box">✓</div>
+                        <span><a href="#">Foydalanish shartlari</a> va <a href="#">Maxfiylik siyosati</a>ga roziman *</span>
+                    </label>
+
+                    <!-- Newsletter -->
+                    <label class="check-field">
+                        <input type="checkbox" id="news" name="newsletter" {% if form.newsletter.value %}checked{% endif %}>
+                        <div class="check-box">✓</div>
+                        <span>Yangiliklar va maxsus takliflar haqida xabar olishni xohlayman</span>
+                    </label>
+
+                    <!-- Divider -->
+                    <div class="divider"><span>Yoki kirish</span></div>
+                    
+                    <!-- Social tugmalar -->
+                    <div class="social-row">
+                        <a href="#" class="social-btn" onclick="alert('Google login tez orada ishga tushadi!'); return false;">🇬 Google</a>
+                        <a href="#" class="social-btn" onclick="alert('Apple login tez orada ishga tushadi!'); return false;">⌘ Apple</a>
+                    </div>
+
+                    <!-- Submit button -->
+                    <div class="btn-row">
+                        <button type="submit" class="btn-next"><span>Hisob Yaratish ✦</span></button>
+                    </div>
+                </div>
+            </form>
+
+            <!-- SUCCESS -->
+            <div class="success-screen" id="success" style="display: none;">
+                <div class="success-icon">✦</div>
+                <h2>Xush kelibsiz!</h2>
+                <p>Hisobingiz muvaffaqiyatli yaratildi.<br>Yangi sayohatingiz boshlanmoqda.</p>
+                <a href="{% url 'login' %}" class="btn-next" style="width:100%; text-align: center; text-decoration: none; display: inline-block;"><span>Tizimga Kirish →</span></a>
+            </div>
+
+            <div class="signin-link" id="signin-link">
+                Allaqachon hisob bormi? <a href="{% url 'login' %}">Kirish</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        // Parol kuchini tekshirish
+        function checkStrength(val) {
+            let score = 0;
+            if (val.length >= 8) score++;
+            if (/[A-Z]/.test(val)) score++;
+            if (/[0-9]/.test(val)) score++;
+            if (/[^A-Za-z0-9]/.test(val)) score++;
+
+            const colors = ['#c0392b', '#e67e22', '#f1c40f', '#27ae60'];
+            const labels = ['Juda zaif', 'Zaif', 'O\'rtacha', 'Kuchli 💪'];
+
+            // Segmentlarni yangilash
+            for (let i = 1; i <= 4; i++) {
+                const seg = document.getElementById('seg' + i);
+                if (seg) {
+                    seg.style.background = i <= score ? colors[score - 1] : 'var(--border)';
+                }
+            }
+
+            // Matnni yangilash
+            const txt = document.getElementById('strength-text');
+            if (txt) {
+                txt.textContent = val ? (labels[score - 1] || labels[0]) : 'Parol kuchini tekshirmoqda...';
+                txt.style.color = val ? colors[score - 1] : 'var(--muted)';
+            }
+        }
+
+        // Parolni ko'rsatish/yashirish
+        function togglePass(id, btn) {
+            const input = document.getElementById(id);
+            if (input) {
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    btn.textContent = '🙈';
+                } else {
+                    input.type = 'password';
+                    btn.textContent = '👁';
+                }
+            }
+        }
+
+        // Parollar mosligini tekshirish
+        function checkPasswordMatch() {
+            const pass = document.getElementById('pass')?.value;
+            const pass2 = document.getElementById('pass2')?.value;
+            const errEl = document.getElementById('pass2-err');
+            
+            if (pass && pass2 && pass !== pass2) {
+                errEl.classList.add('visible');
+            } else {
+                errEl.classList.remove('visible');
+            }
+        }
+
+        // Telefon formatlash
+        document.addEventListener('DOMContentLoaded', function() {
+            const phoneInput = document.getElementById('phone');
+            if (phoneInput) {
+                phoneInput.addEventListener('input', function() {
+                    let val = this.value.replace(/\D/g, '');
+                    if (val && !val.startsWith('998')) val = '998' + val;
+                    if (val) this.value = '+' + val.slice(0, 12);
+                });
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,357 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Topildi.uz — Yo'qolgan buyumlar</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="{% static 'styles/main.css' %}" />
+</head>
+<body>
+
+<!-- Cursor -->
+<div id="cur"></div>
+<div id="cur2"></div>
+
+<!-- Toasts -->
+<div class="toasts" id="toasts"></div>
+
+<!-- ===================== MODAL ===================== -->
+<div class="modal-overlay" id="modal">
+    <div class="modal">
+        <button class="modal-x" id="modal-x">✕</button>
+        <h2 class="modal-h">Yangi e'lon</h2>
+        <p class="modal-sub">Yo'qolgan yoki topilgan narsa haqida ma'lumot kiriting</p>
+        <div class="type-btns">
+            <button class="type-btn sl" id="tb-l" onclick="setType('l')">🔴 Yo'qotdim</button>
+            <button class="type-btn" id="tb-f" onclick="setType('f')">🟢 Topdim</button>
+        </div>
+        <div class="frow">
+            <div><label class="flbl">Narsa nomi</label><input class="finp" type="text" placeholder="Masalan: iPhone 15 Pro"/></div>
+            <div>
+                <label class="flbl">Kategoriya</label>
+                <select class="fsel">
+                    <option>Elektronika</option><option>Hujjatlar</option><option>Hayvonlar</option>
+                    <option>Taqinchoqlar</option><option>Sumkalar</option><option>Kalitlar</option>
+                    <option>Kiyim-kechak</option><option>Boshqa</option>
+                </select>
+            </div>
+        </div>
+        <div class="frow full"><div><label class="flbl">Batafsil tavsif</label><textarea class="fta" placeholder="Rang, shakl, belgisi haqida yozing..."></textarea></div></div>
+        <div class="frow">
+            <div><label class="flbl">Joylashuv</label><input class="finp" type="text" placeholder="Tuman, ko'cha..."/></div>
+            <div><label class="flbl">Telefon</label><input class="finp" type="tel" placeholder="+998 90 000 00 00"/></div>
+        </div>
+        <div class="frow full" id="rew-row"><div><label class="flbl">Mukofot (ixtiyoriy)</label><input class="finp" type="text" placeholder="Masalan: 300 000 so'm"/></div></div>
+        <button class="btn btn-primary btn-lg" style="width:100%;justify-content:center;margin-top:8px" onclick="submitForm()">E'lonni Joylash →</button>
+    </div>
+</div>
+
+<!-- ===================== HEADER ===================== -->
+<header id="hdr">
+    <a href="#" class="logo">
+        <div class="logo-mark">🔍</div>
+        <span class="logo-name">Topildi<b>.uz</b></span>
+    </a>
+    <nav>
+        <a href="#search">Qidiruv</a>
+        <a href="{% url 'lost_items' %}">E'lonlar</a>
+        <a href="#map">Xarita</a>
+        <a href="#how">Jarayon</a>
+    </nav>
+    <div class="hdr-btns">
+         {% if user.is_authenticated %}
+        <a href="#" class="btn btn-ghost">
+            {{ user.username }}
+        </a>
+        <a href="{% url 'logout' %}" class="btn btn-ghost">Chiqish</a>
+        <button class="btn btn-primary" onclick="openModal()">+ E'lon berish</button>
+        {% else %}
+        <a href="{% url 'login' %}" class="btn btn-ghost">Kirish</a>
+        <a href="{% url 'register' %}" class="btn btn-ghost">Ro'yxatdan o'tish</a>
+        {% endif %}
+    </div>
+</header>
+
+<!-- ===================== HERO ===================== -->
+<section class="hero">
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+    <div class="blob b3"></div>
+
+    <div class="hero-l">
+        <div class="hero-badge"><i></i> O'zbekistonda №1 platforma</div>
+        <h1 class="hero-h1">Yo'qotdingizmi?<br>Biz <em>topamiz.</em></h1>
+        <p class="hero-sub">Yo'qolgan narsangizni e'lon qiling yoki topganingizni egasiga qaytaring. Kuniga 500+ odamga yordam beramiz.</p>
+        <div class="hero-cta">
+            <button class="btn btn-primary btn-lg" onclick="openModal()">🔎 E'lon berish — Bepul</button>
+            <button class="btn btn-ghost btn-lg" onclick="scroll2('listings')">Topilganlarni ko'rish →</button>
+        </div>
+    </div>
+
+    <div class="hero-r">
+        <div class="fcard">
+            <div class="fcard-row"><span class="fcard-ico">📱</span><div><div class="fcard-t">iPhone 15 Pro yo'qoldi</div><div class="fcard-m">📍 Yunusobod · 2 soat oldin</div></div></div>
+            <span class="badge bl">Yo'qolgan</span><span class="badge bu" style="margin-left:6px">SHOSHILINCH</span>
+        </div>
+        <div class="fcard">
+            <div class="fcard-row"><span class="fcard-ico">🐕</span><div><div class="fcard-t">Oq Labrador topildi</div><div class="fcard-m">📍 Chilonzor · 45 daq oldin</div></div></div>
+            <span class="badge bf">Topilgan</span>
+        </div>
+        <div class="fcard">
+            <div class="fcard-row"><span class="fcard-ico">💍</span><div><div class="fcard-t">Oltin uzuk topildi</div><div class="fcard-m">📍 Mustaqillik · 3 soat oldin</div></div></div>
+            <span class="badge bf">Topilgan</span>
+        </div>
+        <div class="stat-row">
+            <div class="sc"><div class="sn"><span class="cnt" data-t="12450">0</span></div><div class="sl">Jami e'lon</div></div>
+            <div class="sc"><div class="sn" style="color:var(--green)"><span class="cnt" data-t="8230">0</span></div><div class="sl">Topildi</div></div>
+            <div class="sc"><div class="sn"><span class="cnt" data-t="98" data-s="%">0%</span></div><div class="sl">Muvaffaqiyat</div></div>
+        </div>
+    </div>
+</section>
+
+<!-- ===================== SEARCH ===================== -->
+<section class="search-sec reveal" id="search">
+    <div class="search-box">
+        <h2 class="s-title">Nima qidiryapsiz?</h2>
+        <div class="s-bar">
+            <div class="s-wrap">
+                <span class="s-ico">🔎</span>
+                <input class="s-inp" id="s-inp" type="search" placeholder="Telefon, kalitlar, hamyon, it, mushuk..." autocomplete="off"/>
+            </div>
+            <button class="btn btn-primary" style="padding:0 26px;border-radius:12px" onclick="doSearch()">Qidirish</button>
+        </div>
+        <div class="chips" id="chips">
+            <button class="chip on" data-f="all">Barchasi</button>
+            <button class="chip" data-f="lost">Yo'qolgan</button>
+            <button class="chip" data-f="found">Topilgan</button>
+            <button class="chip" data-f="electronics">📱 Elektronika</button>
+            <button class="chip" data-f="documents">📄 Hujjatlar</button>
+            <button class="chip" data-f="animals">🐾 Hayvonlar</button>
+            <button class="chip" data-f="jewelry">💍 Taqinchoqlar</button>
+            <button class="chip" data-f="bags">🎒 Sumkalar</button>
+            <button class="chip" data-f="keys">🔑 Kalitlar</button>
+        </div>
+    </div>
+</section>
+
+<!-- ===================== LISTINGS ===================== -->
+<section class="listings reveal" id="listings">
+    <div class="sec-head">
+        <div><div class="tag">So'nggi e'lonlar</div><h2 class="sec-h2">Faol qidiruvlar</h2></div>
+        <a href="#" class="sec-link">Barchasini ko'rish →</a>
+    </div>
+    <div class="grid" id="cards">
+        <article class="card" data-status="lost" data-cat="electronics">
+            <div class="card-img" style="background:#0d1020">📱
+                <div class="cst"><span class="badge bl">Yo'qolgan</span></div>
+                <div class="cug"><span class="badge bu">SHOSHILINCH</span></div>
+            </div>
+            <div class="card-body">
+                <div class="card-cat">Elektronika</div>
+                <h3 class="card-title">iPhone 15 Pro — Titan rangi</h3>
+                <p class="card-desc">Qora charm chehlisi bor, orqasida kichik chiziq. Ichida muhim ma'lumotlar. Mukofot beriladi!</p>
+                <div class="card-foot"><span class="card-loc">📍 Yunusobod, Toshkent</span><span class="card-rew">500 000 so'm</span></div>
+            </div>
+        </article>
+
+        <article class="card" data-status="found" data-cat="documents">
+            <div class="card-img" style="background:#0e0f18">📄
+                <div class="cst"><span class="badge bf">Topilgan</span></div>
+            </div>
+            <div class="card-body">
+                <div class="card-cat">Hujjatlar</div>
+                <h3 class="card-title">O'zbekiston pasporti topildi</h3>
+                <p class="card-desc">Erkak kishiga tegishli pasport. Chorsu bozori yaqinida topilgan. Egasi aloqa qilsin.</p>
+                <div class="card-foot"><span class="card-loc">📍 Chorsu, Toshkent</span><span class="card-date">Bugun, 14:30</span></div>
+            </div>
+        </article>
+
+        <article class="card" data-status="lost" data-cat="animals">
+            <div class="card-img" style="background:#0d1a0d">🐕
+                <div class="cst"><span class="badge bl">Yo'qolgan</span></div>
+                <div class="cug"><span class="badge bu">SHOSHILINCH</span></div>
+            </div>
+            <div class="card-body">
+                <div class="card-cat">Hayvonlar</div>
+                <h3 class="card-title">Oq Labrador — «Oq'bil»</h3>
+                <p class="card-desc">3 yoshli oq Labrador. Yoqasida sariq tag'ma bor. Bolalar juda xavotirda, iltimos yordam!</p>
+                <div class="card-foot"><span class="card-loc">📍 Chilonzor, Toshkent</span><span class="card-rew">1 000 000 so'm</span></div>
+            </div>
+        </article>
+
+        <article class="card" data-status="found" data-cat="jewelry">
+            <div class="card-img" style="background:#1a1400">💍
+                <div class="cst"><span class="badge bf">Topilgan</span></div>
+            </div>
+            <div class="card-body">
+                <div class="card-cat">Taqinchoqlar</div>
+                <h3 class="card-title">Oltin uzuk topildi</h3>
+                <p class="card-desc">Naqshinakor oltin uzuk. Metro Mustaqillik Maydoni yaqinida topilgan. Egasiga qaytariladi.</p>
+                <div class="card-foot"><span class="card-loc">📍 Mustaqillik maydoni</span><span class="card-date">Kecha, 19:15</span></div>
+            </div>
+        </article>
+
+        <article class="card" data-status="lost" data-cat="bags">
+            <div class="card-img" style="background:#100a1a">🎒
+                <div class="cst"><span class="badge bl">Yo'qolgan</span></div>
+            </div>
+            <div class="card-body">
+                <div class="card-cat">Sumkalar</div>
+                <h3 class="card-title">Qora Nike ryukzak</h3>
+                <p class="card-desc">Ichida noutbuk, hujjatlar va qimmatli narsalar bor. 28-avtobusda qoldirib ketildi.</p>
+                <div class="card-foot"><span class="card-loc">📍 28-avtobus yo'li</span><span class="card-rew">300 000 so'm</span></div>
+            </div>
+        </article>
+
+        <article class="card" data-status="found" data-cat="keys">
+            <div class="card-img" style="background:#1a1000">🔑
+                <div class="cst"><span class="badge bf">Topilgan</span></div>
+            </div>
+            <div class="card-body">
+                <div class="card-cat">Kalitlar</div>
+                <h3 class="card-title">Chevrolet mashina kalitlari</h3>
+                <p class="card-desc">Uchta kalit, Chevrolet signali bor. Yunusobod savdo markazida topilgan.</p>
+                <div class="card-foot"><span class="card-loc">📍 Yunusobod DC</span><span class="card-date">Bugun, 10:00</span></div>
+            </div>
+        </article>
+    </div>
+</section>
+
+<!-- ===================== MAP ===================== -->
+<section class="map-sec reveal" id="map">
+    <div class="sec-head" style="margin-bottom:22px">
+        <div><div class="tag">Interaktiv xarita</div><h2 class="sec-h2">Toshkent bo'yicha</h2></div>
+    </div>
+    <div class="map-wrap">
+        <div class="map-canvas">
+            <svg viewBox="0 0 900 500" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <pattern id="pg" width="44" height="44" patternUnits="userSpaceOnUse">
+                        <path d="M44 0L0 0 0 44" fill="none" stroke="rgba(255,255,255,0.025)" stroke-width="1"/>
+                    </pattern>
+                    <radialGradient id="rg" cx="50%" cy="50%" r="60%">
+                        <stop offset="0%" stop-color="rgba(201,168,76,0.05)"/>
+                        <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
+                    </radialGradient>
+                </defs>
+                <rect width="900" height="500" fill="url(#pg)"/>
+                <rect width="900" height="500" fill="url(#rg)"/>
+                <line x1="0" y1="250" x2="900" y2="250" stroke="rgba(255,255,255,0.06)" stroke-width="2.5"/>
+                <line x1="450" y1="0" x2="450" y2="500" stroke="rgba(255,255,255,0.06)" stroke-width="2.5"/>
+                <line x1="0" y1="0" x2="900" y2="500" stroke="rgba(255,255,255,0.03)" stroke-width="1.5"/>
+                <line x1="900" y1="0" x2="0" y2="500" stroke="rgba(255,255,255,0.03)" stroke-width="1.5"/>
+            </svg>
+
+            <!-- Map pins -->
+            <div class="mpin" style="left:60%;top:42%" title="iPhone yo'qolgan — Yunusobod">
+                <svg width="26" height="34" viewBox="0 0 28 36"><path d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 22 14 22s14-11.5 14-22C28 6.27 21.73 0 14 0z" fill="#d95f5f"/><circle cx="14" cy="14" r="5.5" fill="white" opacity=".9"/></svg>
+            </div>
+            <div class="mpin" style="left:36%;top:57%" title="Pasport topilgan — Chorsu">
+                <svg width="26" height="34" viewBox="0 0 28 36"><path d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 22 14 22s14-11.5 14-22C28 6.27 21.73 0 14 0z" fill="#4dab82"/><circle cx="14" cy="14" r="5.5" fill="white" opacity=".9"/></svg>
+            </div>
+            <div class="mpin" style="left:23%;top:35%" title="It yo'qolgan — Chilonzor">
+                <svg width="26" height="34" viewBox="0 0 28 36"><path d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 22 14 22s14-11.5 14-22C28 6.27 21.73 0 14 0z" fill="#d95f5f"/><circle cx="14" cy="14" r="5.5" fill="white" opacity=".9"/></svg>
+            </div>
+            <div class="mpin" style="left:49%;top:64%" title="Uzuk topilgan — Mustaqillik">
+                <svg width="26" height="34" viewBox="0 0 28 36"><path d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 22 14 22s14-11.5 14-22C28 6.27 21.73 0 14 0z" fill="#4dab82"/><circle cx="14" cy="14" r="5.5" fill="white" opacity=".9"/></svg>
+            </div>
+
+            <div class="map-legend">
+                <div class="ml"><div class="ml-dot" style="background:var(--red)"></div>Yo'qolgan</div>
+                <div class="ml"><div class="ml-dot" style="background:var(--green)"></div>Topilgan</div>
+            </div>
+        </div>
+        <div class="map-side">
+            <h3 class="map-side-h">Yaqin atrofdagi</h3>
+            <p class="map-side-s">6 ta faol e'lon</p>
+            <div class="mlist">
+                <div class="mitem"><div class="mitem-dot" style="background:var(--red)"></div><div><div class="mitem-n">📱 iPhone 15 Pro yo'qoldi</div><div class="mitem-l">Yunusobod · 0.4 km</div></div></div>
+                <div class="mitem"><div class="mitem-dot" style="background:var(--green)"></div><div><div class="mitem-n">📄 Pasport topildi</div><div class="mitem-l">Chorsu · 0.9 km</div></div></div>
+                <div class="mitem"><div class="mitem-dot" style="background:var(--red)"></div><div><div class="mitem-n">🐕 Oq Labrador yo'qoldi</div><div class="mitem-l">Chilonzor · 1.2 km</div></div></div>
+                <div class="mitem"><div class="mitem-dot" style="background:var(--green)"></div><div><div class="mitem-n">💍 Uzuk topildi</div><div class="mitem-l">Mustaqillik · 1.5 km</div></div></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===================== HOW ===================== -->
+<section class="how-sec reveal" id="how">
+    <div class="sec-head" style="margin-bottom:26px">
+        <div><div class="tag">Jarayon</div><h2 class="sec-h2">Qanday ishlaydi?</h2></div>
+    </div>
+    <div class="steps">
+        <div class="step"><div class="step-n">01</div><span class="step-ico">✍️</span><h3 class="step-t">E'lon bering</h3><p class="step-d">Yo'qolgan yoki topgan narsangiz haqida batafsil e'lon bering. Rasm qo'shing, joylashuvni belgilang — qanchalik ko'p ma'lumot, shunchalik tez topasiz.</p></div>
+        <div class="step"><div class="step-n">02</div><span class="step-ico">🔔</span><h3 class="step-t">Bildirishnoma oling</h3><p class="step-d">Sizning e'loningizga mos narsa topilganda darhol SMS va email orqali xabar beramiz. Platformada minglab faol foydalanuvchilar sizga yordam beradi.</p></div>
+        <div class="step"><div class="step-n">03</div><span class="step-ico">🤝</span><h3 class="step-t">Qaytaring yoki oling</h3><p class="step-d">Egasini topganingizdan so'ng xavfsiz aloqa o'rnating. Narsangizni qaytarib oling yoki topganingizni egasiga topshiring. Hammasi mutlaqo bepul!</p></div>
+    </div>
+</section>
+
+<!-- ===================== FEED ===================== -->
+<section class="feed-sec reveal" id="feed">
+    <div class="sec-head" style="margin-bottom:22px">
+        <div><div class="tag">Real vaqt</div><h2 class="sec-h2">Jonli faoliyat</h2></div>
+    </div>
+    <div class="feed-box">
+        <div class="feed-hdr">
+            <h3>So'nggi yangiliklar</h3>
+            <div class="live-pill"><div class="live-dot"></div>LIVE</div>
+        </div>
+        <div id="feed-items"></div>
+    </div>
+</section>
+
+<!-- ===================== TRUST ===================== -->
+<section class="trust reveal">
+    <div class="trust-g">
+        <div class="tc"><div class="tc-ico">🔒</div><h3 class="tc-t">100% Xavfsiz</h3><p class="tc-d">Barcha aloqalar platforma ichida. Shaxsiy ma'lumotlaringiz hech kimga oshkor qilinmaydi.</p></div>
+        <div class="tc"><div class="tc-ico">⚡</div><h3 class="tc-t">Tezkor natija</h3><p class="tc-d">O'rtacha 48 soat ichida e'lonlar o'z natijasini beradi. 98% muvaffaqiyat darajasi.</p></div>
+        <div class="tc"><div class="tc-ico">🌍</div><h3 class="tc-t">Butun O'zbekiston</h3><p class="tc-d">Toshkent, Samarqand, Buxoro, Namangan va barcha viloyatlarda ishlaymiz.</p></div>
+        <div class="tc"><div class="tc-ico">💰</div><h3 class="tc-t">To'liq Bepul</h3><p class="tc-d">E'lon berish, qidirish, aloqa — hammasi bepul. Hech qanday yashirin to'lovlar yo'q.</p></div>
+    </div>
+</section>
+
+<!-- ===================== CTA ===================== -->
+<section class="cta-sec reveal">
+    <div class="cta-box">
+        <h2 class="cta-t">Yordam kerakmi?<br>Hozir boshlang.</h2>
+        <p class="cta-s">Har kuni minglab odamlar Topildi.uz orqali yo'qotganlarini topishmoqda. Siz ham ularga qo'shiling.</p>
+        <div class="cta-acts">
+            <button class="btn btn-primary btn-lg" onclick="openModal()">🔎 E'lon berish — Bepul</button>
+            <button class="btn btn-ghost btn-lg" onclick="toast('📱 Ilova tez orada chiqadi!','tg')">📱 Ilovani yuklab olish</button>
+        </div>
+    </div>
+</section>
+
+<!-- ===================== FOOTER ===================== -->
+<footer>
+    <div class="footer-g">
+        <div>
+            <a href="#" class="logo"><div class="logo-mark" style="width:34px;height:34px;font-size:16px">🔍</div><span class="logo-name">Topildi<b>.uz</b></span></a>
+            <p class="footer-desc">O'zbekistondagi yo'qolgan va topilgan narsalar uchun ishonchli platforma. Har kuni minglab odamlarga yordam beramiz.</p>
+        </div>
+        <div>
+            <div class="f-col-h">Platforma</div>
+            <ul class="f-links"><li><a href="#">E'lon berish</a></li><li><a href="#">Barcha e'lonlar</a></li><li><a href="#">Xarita</a></li><li><a href="#">Kategoriyalar</a></li></ul>
+        </div>
+        <div>
+            <div class="f-col-h">Kompaniya</div>
+            <ul class="f-links"><li><a href="#">Biz haqimizda</a></li><li><a href="#">Blog</a></li><li><a href="#">Hamkorlik</a></li><li><a href="#">Ish o'rinlari</a></li></ul>
+        </div>
+        <div>
+            <div class="f-col-h">Yordam</div>
+            <ul class="f-links"><li><a href="#">FAQ</a></li><li><a href="#">Aloqa</a></li><li><a href="#">Maxfiylik</a></li><li><a href="#">Shartlar</a></li></ul>
+        </div>
+    </div>
+    <div class="footer-bot">
+        <span>© 2024 Topildi.uz — Barcha huquqlar himoyalangan</span>
+        <span>❤️ bilan O'zbekistonda yaratildi</span>
+    </div>
+</footer>
+
+<script src="{% static 'js/app.js' %}"></script>
+</body>
+</html>
