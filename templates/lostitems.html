@@ -79,52 +79,66 @@
   <div class="modal">
     <h2>E'lon berish</h2>
     <p class="subtitle">Buyum haqida to'liq ma'lumot kiriting</p>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
 
-    <div class="type-toggle">
-      <button class="type-btn active-lost" id="btnLost" onclick="setType('lost')">🔴 Yo'qolgan</button>
-      <button class="type-btn" id="btnFound" onclick="setType('found')">🟢 Topilgan</button>
-    </div>
+      <div class="type-toggle">
+        <button type="button" class="type-btn active-lost" id="btnLost" onclick="setType('lost')">🔴 Yo'qolgan</button>
+        <button type="button" class="type-btn" id="btnFound" onclick="setType('found')">🟢 Topilgan</button>
+      </div>
 
-    <div class="form-group">
-      <label>Buyum nomi *</label>
-      <input type="text" id="itemName" placeholder="Masalan: Qora rangli hamyon">
-    </div>
+      <div class="form-group">
+        <label>Buyum nomi *</label>
+        <input type="text" name="name" placeholder="Masalan: Qora rangli hamyon">
+      </div>
 
-    <div class="form-group">
-      <label>Kategoriya</label>
-      <select id="itemCategory">
-        <option value="Hujjat">📄 Hujjat / Pasport</option>
-        <option value="Telefon">📱 Telefon</option>
-        <option value="Hamyon">👜 Hamyon / Sumka</option>
-        <option value="Kalit">🔑 Kalit</option>
-        <option value="Sumka">🎒 Ryukzak / Sumka</option>
-        <option value="Elektronika">💻 Elektronika</option>
-        <option value="Kiyim">👔 Kiyim-kechak</option>
-        <option value="Boshqa">📦 Boshqa</option>
-      </select>
-    </div>
+      <div class="form-group">
+        <label>Kategoriya</label>
+        <select name="category">
+          <option value="Hujjat">📄 Hujjat / Pasport</option>
+          <option value="Telefon">📱 Telefon</option>
+          <option value="Hamyon">👜 Hamyon / Sumka</option>
+          <option value="Kalit">🔑 Kalit</option>
+          <option value="Sumka">🎒 Ryukzak / Sumka</option>
+          <option value="Elektronika">💻 Elektronika</option>
+          <option value="Kiyim">👔 Kiyim-kechak</option>
+          <option value="Boshqa">📦 Boshqa</option>
+        </select>
+      </div>
 
-    <div class="form-group">
-      <label>Joy *</label>
-      <input type="text" id="itemLocation" placeholder="Masalan: Chilonzor metro, 3-vagon">
-    </div>
+      <div class="form-group">
+        <label>Joy *</label>
+        <input type="text" name="location" placeholder="Masalan: Chilonzor metro, 3-vagon">
+      </div>
 
-    <div class="form-group">
-      <label>Tavsif</label>
-      <textarea id="itemDesc" placeholder="Buyumning rangi, belgisi, ichidagi narsalar..."></textarea>
-    </div>
+      <div class="form-group">
+        <label>Tavsif</label>
+        <textarea name="description" placeholder="Buyumning rangi, belgisi, ichidagi narsalar..."></textarea>
+      </div>
 
-    <div class="form-group">
-      <label>Bog'lanish (telefon yoki Telegram)</label>
-      <input type="text" id="itemContact" placeholder="+998 90 123 45 67 yoki @username">
-    </div>
+      <div class="form-group">
+        <label>Rasm</label>
+        <input type="file" name="image">
+      </div>
 
-    <div class="modal-footer">
-      <button class="btn-cancel" onclick="closeModal()">Bekor qilish</button>
-      <button class="btn-submit" onclick="submitAd()">E'lonni joylash</button>
-    </div>
+      <div class="form-group">
+        <label>Yo'qolgan sana</label>
+        <input type="date" name="date_lost">
+      </div>
+
+      <div class="form-group">
+        <label>Bog'lanish (telefon yoki Telegram)</label>
+        <input type="text" name="contact_info" placeholder="+998 90 123 45 67 yoki @username">
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="closeModal()">Bekor qilish</button>
+        <button type="submit" class="btn-submit">E'lonni joylash</button>
+      </div>
+    </form>
   </div>
 </div>
+
 
 <!-- TOAST -->
 <div class="toast" id="toast">

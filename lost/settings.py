@@ -13,6 +13,18 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 import os
 
+from dotenv import load_dotenv
+
+# .env faylni yuklash
+load_dotenv()
+
+# GEMINI API kalitini olish
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+if not GEMINI_API_KEY:
+    print("⚠️ XATO: GEMINI_API_KEY topilmadi! .env faylni tekshiring.")
+
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 

@@ -12,7 +12,7 @@
 </head>
 <body>
 
-<!-- Cursor -->
+<!-- Custom Cursor -->
 <div id="cur"></div>
 <div id="cur2"></div>
 
@@ -60,7 +60,7 @@
         <a href="#search">Qidiruv</a>
         <a href="{% url 'lost_items' %}">E'lonlar</a>
         <a href="#map">Xarita</a>
-        <a href="#how">Jarayon</a>
+        <a href="#how">Jarayonlar</a>
     </nav>
     <div class="hdr-btns">
          {% if user.is_authenticated %}
@@ -69,6 +69,27 @@
         </a>
         <a href="{% url 'logout' %}" class="btn btn-ghost">Chiqish</a>
         <button class="btn btn-primary" onclick="openModal()">+ E'lon berish</button>
+
+        <button class="btn btn-ghost chat-btn" id="open-chat-btn">💬</button>
+
+        <!-- Chat modal -->
+        <div id="chat-modal" class="chat-modal-overlay">
+            <div class="chat-modal">
+                <button class="chat-close" id="chat-close">×</button>
+                <div class="chat-header">🤖 AI Yordamchi</div>
+                <div class="chat-body" id="chat-messages">
+                    <div class="msg bot">
+                        Assalomu alaykum! Men Topildi.uz AI yordamchiman. Sizga qanday yordam berishim mumkin?
+                        <div class="time">12:00</div>
+                    </div>
+                    <div class="typing" id="typing">yozmoqda...</div>
+                </div>
+                <div class="chat-input-area">
+                    <textarea id="chat-input" placeholder="Xabar yozing..." rows="1"></textarea>
+                    <button id="chat-send">Yuborish</button>
+                </div>
+            </div>
+        </div>
         {% else %}
         <a href="{% url 'login' %}" class="btn btn-ghost">Kirish</a>
         <a href="{% url 'register' %}" class="btn btn-ghost">Ro'yxatdan o'tish</a>

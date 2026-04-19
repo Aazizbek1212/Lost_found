@@ -26,7 +26,7 @@ class LostItem(models.Model):
     contact_info = models.CharField(max_length=200)
 
     def __str__(self):
-        return f"{self.title} (yo'qolgan)"
+        return f"{self.name} (yo'qolgan)"
 
 
 class FoundItem(models.Model):
@@ -40,5 +40,5 @@ class FoundItem(models.Model):
     contact_info = models.CharField(max_length=200)
 
     def __str__(self):
-        return f"{self.title} (topilgan)"
+        return f"{self.name} (topilgan)"
 
