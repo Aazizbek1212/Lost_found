@@ -58,7 +58,7 @@
     </a>
     <nav>
         <a href="#search">Qidiruv</a>
-        <a href="{% url 'lost_items' %}">E'lonlar</a>
+        <a href="{% url 'items' %}">E'lonlar</a>
         <a href="#map">Xarita</a>
         <a href="#how">Jarayonlar</a>
     </nav>
@@ -114,23 +114,50 @@
     </div>
 
     <div class="hero-r">
+        {% for item in items %}
         <div class="fcard">
-            <div class="fcard-row"><span class="fcard-ico">📱</span><div><div class="fcard-t">iPhone 15 Pro yo'qoldi</div><div class="fcard-m">📍 Yunusobod · 2 soat oldin</div></div></div>
-            <span class="badge bl">Yo'qolgan</span><span class="badge bu" style="margin-left:6px">SHOSHILINCH</span>
+            <div class="fcard-row">
+                <span class="fcard-ico">
+                    {% if item.category == "Telefon" %}📱
+                    {% elif item.category == "Hayvon" %}🐕
+                    {% elif item.category == "Taqinchoq" %}💍
+                    {% else %}📦
+                    {% endif %}
+                </span>
+                <div>
+                    <div class="fcard-t">{{ item.description }}</div>
+                    <div class="fcard-m">📍 {{ item.location }} · {{ item.date|timesince }} oldin</div>
+                </div>
+            </div>
+            {% if item.status == "lost" %}
+                <span class="badge bl">Yo'qolgan</span>
+            {% else %}
+                <span class="badge bf">Topilgan</span>
+            {% endif %}
+            {% if item.urgent %}
+                <span class="badge bu" style="margin-left:6px">SHOSHILINCH</span>
+            {% endif %}
         </div>
-        <div class="fcard">
-            <div class="fcard-row"><span class="fcard-ico">🐕</span><div><div class="fcard-t">Oq Labrador topildi</div><div class="fcard-m">📍 Chilonzor · 45 daq oldin</div></div></div>
-            <span class="badge bf">Topilgan</span>
-        </div>
-        <div class="fcard">
-            <div class="fcard-row"><span class="fcard-ico">💍</span><div><div class="fcard-t">Oltin uzuk topildi</div><div class="fcard-m">📍 Mustaqillik · 3 soat oldin</div></div></div>
-            <span class="badge bf">Topilgan</span>
-        </div>
+        {% endfor %}
         <div class="stat-row">
-            <div class="sc"><div class="sn"><span class="cnt" data-t="12450">0</span></div><div class="sl">Jami e'lon</div></div>
-            <div class="sc"><div class="sn" style="color:var(--green)"><span class="cnt" data-t="8230">0</span></div><div class="sl">Topildi</div></div>
-            <div class="sc"><div class="sn"><span class="cnt" data-t="98" data-s="%">0%</span></div><div class="sl">Muvaffaqiyat</div></div>
+            <div class="sc">
+                <div class="sn"><span class="cnt" id="total-items">0</span></div>
+                <div class="sl">Jami e'lon</div>
+            </div>
+            <div class="sc">
+                <div class="sn" style="color:var(--green)">
+                    <span class="cnt" id="found-items">0</span>
+                </div>
+                <div class="sl">Topildi</div>
+            </div>
+            <div class="sc">
+                <div class="sn">
+                    <span class="cnt" id="success-rate">0%</span>
+                </div>
+                <div class="sl">Muvaffaqiyat</div>
+            </div>
         </div>
+
     </div>
 </section>
 

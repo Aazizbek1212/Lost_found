@@ -4,21 +4,44 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TopilDi — Yo'qolgan Buyumlar</title>
+<title>Topildi.uz — Yo'qolgan Buyumlar</title>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;800&family=Onest:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{% static 'styles/items.css' %}">
 </head>
 <body>
 
 <!-- NAV -->
-<nav>
-  <div class="logo">Topil<span>Di</span></div>
-  <div class="nav-links">
-    <a href="#">E'lonlar</a>
-    <a href="#">Qanday ishlaydi?</a>
-    <button class="btn-primary" onclick="openModal()">+ E'lon berish</button>
+<nav class="navbar">
+  <div class="navbar-left">
+    <a href="#" class="logo">
+        <div class="logo-mark">🔍</div>
+        <span class="logo-name">Topildi<b>.uz</b></span>
+    </a>
+    <a href="{% url 'home' %}">Bosh sahifa</a>
+    <a href="#map">Xarita</a>
+    <a href="#process">Jarayonlar</a>
+  </div>
+
+  <div class="navbar-right">
+    {% if user.is_authenticated %}
+      <a href="#" class="btn-dark">{{ user.username }}</a>
+      <a href="{% url 'logout' %}" class="btn-dark">Chiqish</a>
+      <button class="btn btn-primary" onclick="openModal()">+ E'lon berish</button>
+    {% else %}
+      <a href="{% url 'login' %}" class="btn-dark">Kirish</a>
+      <a href="{% url 'register' %}" class="btn-dark">Ro'yxatdan o'tish</a>
+    {% endif %}
   </div>
 </nav>
+ {% if messages %}
+  <div class="messages">
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}">
+        {{ message }}
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
 
 <!-- HERO -->
 <div class="hero">
@@ -71,7 +94,30 @@
     <div class="section-title">So'nggi e'lonlar</div>
     <a href="#" class="see-all">Hammasini ko'rish →</a>
   </div>
-  <div class="cards-grid" id="cardsGrid"></div>
+  <div class="cards-grid" id="cardsGrid">
+  {% for item in items %}
+    <div class="card {{ item.item_type }}">
+      <div class="card-image">
+        {% if item.image %}
+          <img src="{{ item.image.url }}" alt="{{ item.name }}">
+        {% else %}
+          <div class="no-image">📷</div>
+        {% endif %}
+      </div>
+      <div class="card-body">
+        <h3>{{ item.name }}</h3>
+        <p class="meta">
+          📅 {{ item.date }} | 
+          {% if item.category %}{{ item.category.name }}{% else %}-{% endif %} | 
+          📍 {% if item.location %}{{ item.location.name }}{% else %}-{% endif %}
+        </p>
+        <p>{{ item.description|truncatewords:20 }}</p>
+        <p class="contact">☎ {{ item.contact_info }}</p>
+      </div>
+    </div>
+  {% empty %}
+    <p class="no-items">Hozircha e'lonlar yo'q.</p>
+  {% endfor %}
 </div>
 
 <!-- MODAL -->
@@ -79,9 +125,9 @@
   <div class="modal">
     <h2>E'lon berish</h2>
     <p class="subtitle">Buyum haqida to'liq ma'lumot kiriting</p>
-    <form method="post" enctype="multipart/form-data">
+    <form method="post" action="{% url 'add_item' %}" enctype="multipart/form-data">
+      <input type="hidden" name="item_type" id="itemType" value="lost">
       {% csrf_token %}
-
       <div class="type-toggle">
         <button type="button" class="type-btn active-lost" id="btnLost" onclick="setType('lost')">🔴 Yo'qolgan</button>
         <button type="button" class="type-btn" id="btnFound" onclick="setType('found')">🟢 Topilgan</button>
@@ -89,26 +135,17 @@
 
       <div class="form-group">
         <label>Buyum nomi *</label>
-        <input type="text" name="name" placeholder="Masalan: Qora rangli hamyon">
+        <input type="text" name="name" placeholder="Masalan: Qora rangli hamyon" required>
       </div>
 
       <div class="form-group">
         <label>Kategoriya</label>
-        <select name="category">
-          <option value="Hujjat">📄 Hujjat / Pasport</option>
-          <option value="Telefon">📱 Telefon</option>
-          <option value="Hamyon">👜 Hamyon / Sumka</option>
-          <option value="Kalit">🔑 Kalit</option>
-          <option value="Sumka">🎒 Ryukzak / Sumka</option>
-          <option value="Elektronika">💻 Elektronika</option>
-          <option value="Kiyim">👔 Kiyim-kechak</option>
-          <option value="Boshqa">📦 Boshqa</option>
-        </select>
+        {{ form.category }}
       </div>
 
       <div class="form-group">
-        <label>Joy *</label>
-        <input type="text" name="location" placeholder="Masalan: Chilonzor metro, 3-vagon">
+        <label>Joy</label>
+        {{ form.location }}
       </div>
 
       <div class="form-group">
@@ -122,8 +159,8 @@
       </div>
 
       <div class="form-group">
-        <label>Yo'qolgan sana</label>
-        <input type="date" name="date_lost">
+        <label>Sana *</label>
+        <input type="date" name="date" required>
       </div>
 
       <div class="form-group">
@@ -138,7 +175,6 @@
     </form>
   </div>
 </div>
-
 
 <!-- TOAST -->
 <div class="toast" id="toast">

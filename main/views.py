@@ -1,96 +1,202 @@
 from django.shortcuts import redirect, render
+from django.urls import reverse_lazy
 from django.views.generic.edit import CreateView
-from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib import messages
+from django.db.models import Count
 
-from main.forms import LostItemForm
-from main.models import FoundItem, LostItem
-import os
-import json
-import google.generativeai as genai
+from main.forms import ItemForm
+from main.models import ChatMessage, Item
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+import json
+import os
 from dotenv import load_dotenv
-from .models import LostItem  # Modelingiz nomini tekshiring (masalan: E'lon, Post, Item)
+from google import genai
+from .models import Item  # Item modelini import qilish
 
 load_dotenv()
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+
+# System prompt (AI konteksti)
+system_prompt = """
+Siz Topildi.uz AI yordamchisiz. Sizning vazifangiz:
+- Foydalanuvchilarga yo'qolgan va topilgan buyumlar haqida yordam berish.
+- Sayt funksiyalari haqida savollarga javob berish.
+- Oddiy suhbatlarda samimiy va foydali bo'lish.
+- Foydalanuvchilarga e'lon berish tartibini tushuntirish.
+- Sayt qoidalari va shartlari haqida ma'lumot berish.
+
+Sayt haqida asosiy ma'lumotlar:
+- Bu sayt yo'qolgan va topib olingan buyumlarni e'lon qilish uchun ishlatiladi.
+- Saytda barcha turdagi buyumlarni e'lon qilish mumkin (telefon, hujjat, kalit, sumka va boshqalar).
+- E'lon berish tekin, hech qanday to'lov talab qilinmaydi.
+- E'lon berish uchun foydalanuvchi ro'yxatdan o'tishi zarur, keyin e'lon qo'shishi mumkin.
+- Foydalanuvchilar bazadagi yo'qolgan va topilgan buyumlar haqida izohlar qoldirishlari mumkin.
+- Har bir e'lon joylashuv va kategoriya bilan birga ko'rsatiladi.
+- Admin panel orqali kategoriya va joylashuvlarni boshqarish mumkin.
+- Foydalanuvchilar e'lonlarga bog'lanish uchun aloqa ma'lumotlarini ko'rishlari mumkin.
+- Saytning asosiy maqsadi — yo'qolgan narsalarni tezroq topishga yordam berish.
+
+Oxirgi e'lonlar:
+{items_text}
+Foydalanuvchi so'rovi: {message}
+Vazifa: foydalanuvchi so'roviga mos e'lonlarni tanlab, javob qaytar.
+
+"""
+
 
 @csrf_exempt
-def ask_gemini(request):
+def chat_ai(request):
     if request.method == "POST":
         try:
             data = json.loads(request.body)
-            user_text = data.get("text", "").lower().strip()
+            user_message = data.get("message")          # chat uchun
+            description_text = data.get("description")  # e'lon matni uchun
 
-            # 1. STATIK FILTR (Tezkor va tejamkor)
-            static_responses = {
-                "salom": "Assalomu alaykum! Topildi.uz yordamchisiman. Sizga qanday yordam bera olaman?",
-                "qalaysiz": "Rahmat, men yaxshiman! Sayt bo'yicha savollaringiz bo'lsa, yordam berishga tayyorman.",
-                "rahmat": "Arziydi! Yana savollaringiz bo'lsa, bemalol murojaat qiling.",
-                "kimisan": "Men Topildi.uz loyihasining aqlli chatbotiman."
-            }
+            # Bazadan oxirgi 10 ta e'lonni olish
+            items = Item.objects.order_by("-id")[:10]
+            items_text = "\n".join([f"{i.category} - {i.location}: {i.description}" for i in items])
 
-            if user_text in static_responses:
-                return JsonResponse({"reply": static_responses[user_text]})
+            # Chat prompt
+            chat_prompt = f"""
+            {system_prompt}
 
-            # 2. BAZADAN MA'LUMOTLARNI YIG'ISH
-            # Oxirgi 10 ta e'lonни olamiz
-            latest_items = LostItem.objects.all().order_by('-date_lost')[:10]
-            items_list = ""
-            for item in latest_items:
-                # Bazadagi maydon nomlariga qarab o'zgartiring (title, location, type va h.k.)
-                status = "Topilgan" if item.type == 'found' else "Yo'qolgan"
-                items_list += f"- {status}: {item.title}, Joyi: {item.location}\n"
+            Oxirgi e'lonlar:
+            {items_text}
 
-            # AI uchun ko'rsatma va baza ma'lumotlari
-            context = f"""
-            Sen Topildi.uz sayti yordamchisisan. 
-            Saytdagi oxirgi e'lonlar:
-            {items_list}
-
-            Foydalanuvchi savoli: {user_text}
-            
-            Javobing qisqa, aniq va faqat o'zbek tilida bo'lsin.
+            Foydalanuvchi xabari: {user_message}
             """
 
-            # 3. AI BOG'LANISH (Flash model)
+            # Modelni chaqirish (fallback bilan)
             try:
-                model = genai.GenerativeModel('gemini-1.5-flash')
-                response = model.generate_content(context)
-                return JsonResponse({"reply": response.text})
-            except:
-                # Zaxira: Agar flash ishlamasa, Pro modelga o'tish
-                model = genai.GenerativeModel('gemini-pro')
-                response = model.generate_content(context)
-                return JsonResponse({"reply": response.text})
+                response = client.models.generate_content(
+                    model="models/gemini-2.5-flash",
+                    contents=chat_prompt
+                )
+            except Exception:
+                response = client.models.generate_content(
+                    model="models/gemini-2.5-pro",
+                    contents=chat_prompt
+                )
 
-        except Exception as e:
-            return JsonResponse({"reply": "Hozircha javob berishda qiyinchilik bo'lyapti, birozdan so'ng urinib ko'ring."})
+            # Chat xabarlarini bazaga saqlash
+            ChatMessage.objects.create(
+                user_id=request.session.session_key,
+                role="user",
+                message=user_message
+            )
+            ChatMessage.objects.create(
+                user_id=request.session.session_key,
+                role="bot",
+                message=response.text
+            )
 
-    return JsonResponse({"error": "Method not allowed"}, status=405)
+            # Agar description_text bo'lsa, kategoriya va joylashuvni aniqlash
+            category, location = None, None
+            if description_text:
+                cat_prompt = f"""
+                Foydalanuvchi e'lon matni: "{description_text}"
+
+                Vazifa:
+                - Matndan kategoriya (telefon, hujjat, kalit, sumka va boshqalar) ni aniqlang.
+                - Matndan joylashuv (masalan: Yunusobod, Chilonzor, Samarqand va hokazo) ni aniqlang.
+                - Faqat kategoriya va joylashuvni qaytaring.
+                """
+                try:
+                    cat_response = client.models.generate_content(
+                        model="models/gemini-2.5-flash",
+                        contents=cat_prompt
+                    )
+                    result = cat_response.text
+                    if "Kategoriya:" in result:
+                        category = result.split("Kategoriya:")[1].split("\n")[0].strip()
+                    if "Joylashuv:" in result:
+                        location = result.split("Joylashuv:")[1].split("\n")[0].strip()
+
+                    # Bazaga saqlash
+                    Item.objects.create(
+                        description=description_text,
+                        category=category,
+                        location=location
+                    )
+                except Exception:
+                    pass  # Kategoriya aniqlash muvaffaqiyatsiz
+
+            return JsonResponse({"reply": response.text})
+
+        except Exception:
+            return JsonResponse({"reply": "AI ishlamayapti 😔"})
+
+    return JsonResponse({"reply": "Faqat POST ishlaydi"})
+
+
+def chat_history(request):
+    messages = ChatMessage.objects.filter(
+        user_id=request.session.session_key
+    ).order_by("timestamp")
+
+    return JsonResponse({
+        "messages": [
+            {"role": m.role, "text": m.message, "time": m.timestamp.strftime("%H:%M")}
+            for m in messages
+        ]
+    })
+
+
+def stats_view(request):
+    total_items = Item.objects.count()
+    by_category = Item.objects.values("category").annotate(count=Count("id")).order_by("-count")
+    by_location = Item.objects.values("location").annotate(count=Count("id")).order_by("-count")
+
+    data = {
+        "total_items": total_items,
+        "by_category": list(by_category),
+        "by_location": list(by_location),
+    }
+    return JsonResponse(data)
+
+
+def dashboard_stats(request):
+    total_items = Item.objects.count()  # Jami e'lon
+    found_items = Item.objects.filter(status="found").count()  # Topildi
+    success_rate = 0
+
+    if total_items > 0:
+        success_rate = round((found_items / total_items) * 100)
+
+    data = {
+        "total_items": total_items,
+        "found_items": found_items,
+        "success_rate": success_rate,
+    }
+    return JsonResponse(data)
+
 
 def home_view(request):
     return render(request, 'index.html')
 
 
-def chat_view(request):
-    return render(request, "chat.html")
+def items_view(request): # Yo‘qolgan narsalar ro‘yxati
+    items = Item.objects.all().order_by('-date')
+    last_items = Item.objects.all().order_by('-date')[:3]
+    form = ItemForm()
+    return render(request, 'items.html', {'items': items, 'last_items': last_items, 'form': form})
 
+class CreateItemView(LoginRequiredMixin, CreateView):
+    model = Item
+    template_name = 'items.html'
+    form_class = ItemForm
+    login_url = 'login'
+    success_url = reverse_lazy('items')  # ✅ muvaffaqiyatdan keyin yo‘naltirish
 
-def lostitems_view(request): # Yo‘qolgan narsalar ro‘yxati
-    lost_items = LostItem.objects.all().order_by('-date_lost')
-    return render(request, 'lostitems.html', {'lost_items': lost_items})
+    def form_valid(self, form):
+        form.instance.user = self.request.user
+        messages.success(self.request, "✅ E'lon muvaffaqiyatli qo'shildi!")
+        return super().form_valid(form)
 
-class CreateLostItemView(PermissionRequiredMixin, CreateView):
-    model = LostItem
-    template_name = 'lost_item_add.html'
-    form_class = LostItemForm
-    permission_required = 'app.add_lostitem'  # app nomini o‘z loyihangga mos yoz
-
-    def post(self, request, *args, **kwargs):
-        form = LostItemForm(request.POST, request.FILES)
-        if form.is_valid():
-            form.save()
-        else:
-            print(form.errors)  # xatolarni konsolga chiqaradi
-        return redirect('lost_item_add')  # url name mos yozilishi kerak
+    def form_invalid(self, form):
+        items = Item.objects.all().order_by('-date')
+        messages.error(self.request, "Xatolik yuz berdi. Qaytadan urinib ko'ring.")
+        return render(self.request, 'items.html', {'form': form, 'items': items})
+        

@@ -10,7 +10,6 @@ def login_user(request):
         username = request.POST.get('username')
         password = request.POST.get('password')
         user = authenticate(request, username=username, password=password)
-        print(f"Username: {username}, Parol: {password}")
         
         if user:
             login(request, user)

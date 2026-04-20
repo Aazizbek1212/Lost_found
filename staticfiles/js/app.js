@@ -172,9 +172,9 @@ function animateCounter(element) {
     requestAnimationFrame(tick);
 }
 // =========================================
-// CHAT MODAL - TO'LIQ QAYTA YOZILGAN VERSIYA
+// CHAT MODAL - TO'LIQ TO'G'RILANGAN VERSIYA
 // =========================================
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const chatModal = document.getElementById('chat-modal');
     const openChatBtn = document.getElementById('open-chat-btn');
     const chatClose = document.getElementById('chat-close');
@@ -182,35 +182,27 @@ document.addEventListener('DOMContentLoaded', function() {
     const chatInput = document.getElementById('chat-input');
     const chatMessages = document.getElementById('chat-messages');
     const typingEl = document.getElementById('typing');
-    const chatHistory = [];
 
     // Elementlarni tekshirish
-    if (!chatModal) console.error('❌ chat-modal topilmadi!');
-    if (!openChatBtn) console.error('❌ open-chat-btn topilmadi!');
-    if (!chatClose) console.error('❌ chat-close topilmadi!');
+    if (!chatModal) return;
 
     // Chatni ochish
     if (openChatBtn && chatModal) {
-        // Eski eventlarni tozalash
         const newBtn = openChatBtn.cloneNode(true);
         openChatBtn.parentNode.replaceChild(newBtn, openChatBtn);
-        
-        newBtn.addEventListener('click', function(e) {
+
+        newBtn.addEventListener('click', function (e) {
             e.preventDefault();
-            e.stopPropagation();
-            console.log('✅ Chat ochilmoqda...');
             chatModal.style.display = 'flex';
             chatModal.classList.add('open');
             document.body.style.overflow = 'hidden';
-            if (chatInput) chatInput.focus();
+            chatInput.focus();
         });
     }
 
     // Chatni yopish
     if (chatClose && chatModal) {
-        chatClose.addEventListener('click', function(e) {
-            e.preventDefault();
-            console.log('✅ Chat yopilmoqda...');
+        chatClose.addEventListener('click', function () {
             chatModal.style.display = 'none';
             chatModal.classList.remove('open');
             document.body.style.overflow = '';
@@ -219,7 +211,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Modal tashqarisiga bosganda yopish
     if (chatModal) {
-        chatModal.addEventListener('click', function(e) {
+        chatModal.addEventListener('click', function (e) {
             if (e.target === chatModal) {
                 chatModal.style.display = 'none';
                 chatModal.classList.remove('open');
@@ -228,87 +220,211 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Vaqt olish
+    // Vaqt funksiyasi
     function getTime() {
-        return new Date().toLocaleTimeString('uz', { hour: '2-digit', minute: '2-digit' });
+        return new Date().toLocaleTimeString('uz', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
     }
 
-    // Xabar qo'shish
+    // Xabar qo‘shish
     function addChatMsg(text, role) {
         if (!chatMessages || !typingEl) return;
+
         const div = document.createElement('div');
         div.className = 'msg ' + (role === 'user' ? 'user' : 'bot');
-        div.innerHTML = text.replace(/\n/g, '<br>') + '<div class="time">' + getTime() + '</div>';
+
+        div.innerHTML =
+            text.replace(/\n/g, '<br>') +
+            '<div class="time">' + getTime() + '</div>';
+
         chatMessages.insertBefore(div, typingEl);
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    // CSRF token olish
+    // CSRF token (Django uchun)
     function getCookie(name) {
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
             const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            for (let cookie of cookies) {
+                cookie = cookie.trim();
+                if (cookie.startsWith(name + '=')) {
                     cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
                 }
             }
         }
         return cookieValue;
     }
 
-    // Xabar yuborish
-    async function sendChatMsg() {
-        if (!chatInput || !chatMessages) return;
-        
-        const text = chatInput.value.trim();
-        if (!text) return;
-        
-        chatInput.value = '';
-        addChatMsg(text, 'user');
-        chatHistory.push({ role: 'user', content: text });
-        
-        if (typingEl) typingEl.style.display = 'flex';
+});
+    // =========================
+    // 🔥 ASOSIY SEND FUNKSIYA
+    // =========================
+    document.addEventListener('DOMContentLoaded', function () {
+    const chatModal    = document.getElementById('chat-modal');
+    const openChatBtn  = document.getElementById('open-chat-btn');
+    const chatClose    = document.getElementById('chat-close');
+    const chatSend     = document.getElementById('chat-send');
+    const chatInput    = document.getElementById('chat-input');
+    const chatMessages = document.getElementById('chat-messages');
+    const typingEl     = document.getElementById('typing');
 
-        try {
-            const response = await fetch('/ask-ai/', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken')
-                },
-                body: JSON.stringify({ text: text, history: chatHistory })
-            });
-            
-            const data = await response.json();
-            const reply = data.reply || "Xatolik yuz berdi. Qayta urinib ko'ring.";
-            chatHistory.push({ role: 'assistant', content: reply });
-            if (typingEl) typingEl.style.display = 'none';
-            addChatMsg(reply, 'bot');
-        } catch (e) {
-            console.error('Chat error:', e);
-            if (typingEl) typingEl.style.display = 'none';
-            addChatMsg('❌ Tarmoq xatosi. Iltimos, qayta urinib ko\'ring.', 'bot');
-        }
-        
-        if (chatInput) chatInput.focus();
+    // Chatni ochish
+    if (openChatBtn && chatModal) {
+        openChatBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            chatModal.style.display = 'flex';
+            chatModal.classList.add('open');
+            document.body.style.overflow = 'hidden';
+            chatInput.focus();
+        });
     }
 
-    // Event listenerlar
-    if (chatSend) {
-        chatSend.addEventListener('click', sendChatMsg);
+    // Chatni yopish
+    if (chatClose && chatModal) {
+        chatClose.addEventListener('click', function () {
+            chatModal.style.display = 'none';
+            chatModal.classList.remove('open');
+            document.body.style.overflow = '';
+        });
     }
 
-    if (chatInput) {
-        chatInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendChatMsg();
+    // Modal tashqarisiga bosganda yopish
+    if (chatModal) {
+        chatModal.addEventListener('click', function (e) {
+            if (e.target === chatModal) {
+                chatModal.style.display = 'none';
+                chatModal.classList.remove('open');
+                document.body.style.overflow = '';
             }
         });
     }
 
-    console.log('✅ Chat modul yuklandi');
+    // Vaqt funksiyasi
+    function getTime() {
+        return new Date().toLocaleTimeString('uz', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+    // Xabar qo‘shish
+    function addChatMsg(text, role) {
+        const div = document.createElement('div');
+        div.className = 'msg ' + (role === 'user' ? 'user' : 'bot');
+        div.innerHTML = text.replace(/\n/g, '<br>') +
+                        '<div class="time">' + getTime() + '</div>';
+        chatMessages.appendChild(div);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // CSRF token olish (Django uchun)
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                cookie = cookie.trim();
+                if (cookie.startsWith(name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Asosiy yuborish funksiyasi
+    async function sendMessage() {
+        const msg = chatInput.value.trim();
+        if (!msg) return;
+
+        addChatMsg(msg, "user");
+        chatInput.value = "";
+        if (typingEl) typingEl.style.display = "block";
+
+        try {
+            const res = await fetch("/chat-ai/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken")
+                },
+                body: JSON.stringify({ message: msg })
+            });
+            const data = await res.json();
+            if (typingEl) typingEl.style.display = "none";
+            addChatMsg(data.reply, "bot");
+        } catch (error) {
+            console.error("❌ Xatolik:", error);
+            if (typingEl) typingEl.style.display = "none";
+            addChatMsg("Server bilan bog‘lanishda xatolik!", "bot");
+        }
+    }
+
+    // Tugma bosilganda yuborish
+    if (chatSend) {
+        chatSend.addEventListener("click", sendMessage);
+    }
+
+    // Enter bosilganda yuborish
+    if (chatInput) {
+        chatInput.addEventListener("keydown", function (e) {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    }
+
+    // Chat tarixini yuklash
+    function loadChatHistory() {
+        const chatMessages = document.getElementById("chat-messages");
+        if (!chatMessages) return;
+        fetch("/chat-history/")
+            .then(response => response.json())
+            .then(data => {
+                chatMessages.innerHTML = "";
+                data.messages.forEach(msg => {
+                    const div = document.createElement("div");
+                    div.className = msg.role === "user" ? "msg user" : "msg bot";
+                    div.innerHTML = `
+                        ${msg.text}
+                        <div class="time">${msg.time}</div>
+                    `;
+                    chatMessages.appendChild(div);
+                });
+            })
+            .catch(err => {});
+    }
+    loadChatHistory();
+
+    // Statistika yuklash
+    fetch("/stats/")
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById("total-items").innerText = data.total_items;
+            const catBox = document.getElementById("stats-category");
+            data.by_category.forEach(c => {
+                const div = document.createElement("div");
+                div.innerText = `${c.category}: ${c.count}`;
+                catBox.appendChild(div);
+            });
+            const locBox = document.getElementById("stats-location");
+            data.by_location.forEach(l => {
+                const div = document.createElement("div");
+                div.innerText = `${l.location}: ${l.count}`;
+                locBox.appendChild(div);
+            });
+        });
+
+    fetch("/dashboard-stats/")
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById("total-items").innerText = data.total_items;
+            document.getElementById("found-items").innerText = data.found_items;
+            document.getElementById("success-rate").innerText = data.success_rate + "%";
+        });
+    
 });

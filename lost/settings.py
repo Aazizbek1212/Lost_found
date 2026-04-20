@@ -22,7 +22,7 @@ load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 if not GEMINI_API_KEY:
-    print("⚠️ XATO: GEMINI_API_KEY topilmadi! .env faylni tekshiring.")
+    pass  # .env faylni sozlang
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
