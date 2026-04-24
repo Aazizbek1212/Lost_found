@@ -64,9 +64,9 @@
     </nav>
     <div class="hdr-btns">
          {% if user.is_authenticated %}
-        <a href="#" class="btn btn-ghost">
-            {{ user.username }}
-        </a>
+         <a href="#" class="btn btn-ghost" onclick="openProfileModal(); return false;">
+        👤 {{ user.username }}
+    </a>
         <a href="{% url 'logout' %}" class="btn btn-ghost">Chiqish</a>
         <button class="btn btn-primary" onclick="openModal()">+ E'lon berish</button>
 
@@ -114,213 +114,132 @@
     </div>
 
     <div class="hero-r">
-        {% for item in items %}
-        <div class="fcard">
-            <div class="fcard-row">
-                <span class="fcard-ico">
-                    {% if item.category == "Telefon" %}📱
-                    {% elif item.category == "Hayvon" %}🐕
-                    {% elif item.category == "Taqinchoq" %}💍
-                    {% else %}📦
-                    {% endif %}
-                </span>
-                <div>
-                    <div class="fcard-t">{{ item.description }}</div>
-                    <div class="fcard-m">📍 {{ item.location }} · {{ item.date|timesince }} oldin</div>
-                </div>
-            </div>
-            {% if item.status == "lost" %}
-                <span class="badge bl">Yo'qolgan</span>
-            {% else %}
-                <span class="badge bf">Topilgan</span>
-            {% endif %}
-            {% if item.urgent %}
-                <span class="badge bu" style="margin-left:6px">SHOSHILINCH</span>
-            {% endif %}
-        </div>
-        {% endfor %}
-        <div class="stat-row">
-            <div class="sc">
-                <div class="sn"><span class="cnt" id="total-items">0</span></div>
-                <div class="sl">Jami e'lon</div>
-            </div>
-            <div class="sc">
-                <div class="sn" style="color:var(--green)">
-                    <span class="cnt" id="found-items">0</span>
-                </div>
-                <div class="sl">Topildi</div>
-            </div>
-            <div class="sc">
-                <div class="sn">
-                    <span class="cnt" id="success-rate">0%</span>
-                </div>
-                <div class="sl">Muvaffaqiyat</div>
+    {% for last_item in last_item %}
+    <div class="fcard">
+        <div class="fcard-row">
+            <div>
+                <div class="fcard-t">{{ last_item.description }}</div>
+                <div class="fcard-m">📍 {{ last_item.location.name }} · {{ last_item.date|timesince }} oldin</div>
             </div>
         </div>
-
+        {% if last_item.status == "lost" %}
+            <span class="badge bl">Yo'qolgan</span>
+        {% else %}
+            <span class="badge bf">Topilgan</span>
+        {% endif %}
+        {% if last_item.urgent %}
+            <span class="badge bu" style="margin-left:6px">SHOSHILINCH</span>
+        {% endif %}
     </div>
+    {% endfor %}
+
+    <div class="stat-row">
+        <div class="sc">
+            <div class="sn"><span class="cnt">{{ total_items }}</span></div>
+            <div class="sl">Jami e'lon</div>
+        </div>
+        <div class="sc">
+            <div class="sn" style="color:var(--green)">
+                <span class="cnt">{{ found_items }}</span>
+            </div>
+            <div class="sl">Topildi</div>
+        </div>
+        <div class="sc">
+            <div class="sn">
+                <span class="cnt">{{ success_rate }}%</span>
+            </div>
+            <div class="sl">Muvaffaqiyat</div>
+        </div>
+    </div>
+</div>
+
 </section>
 
 <!-- ===================== SEARCH ===================== -->
 <section class="search-sec reveal" id="search">
-    <div class="search-box">
-        <h2 class="s-title">Nima qidiryapsiz?</h2>
-        <div class="s-bar">
-            <div class="s-wrap">
-                <span class="s-ico">🔎</span>
-                <input class="s-inp" id="s-inp" type="search" placeholder="Telefon, kalitlar, hamyon, it, mushuk..." autocomplete="off"/>
-            </div>
-            <button class="btn btn-primary" style="padding:0 26px;border-radius:12px" onclick="doSearch()">Qidirish</button>
-        </div>
-        <div class="chips" id="chips">
-            <button class="chip on" data-f="all">Barchasi</button>
-            <button class="chip" data-f="lost">Yo'qolgan</button>
-            <button class="chip" data-f="found">Topilgan</button>
-            <button class="chip" data-f="electronics">📱 Elektronika</button>
-            <button class="chip" data-f="documents">📄 Hujjatlar</button>
-            <button class="chip" data-f="animals">🐾 Hayvonlar</button>
-            <button class="chip" data-f="jewelry">💍 Taqinchoqlar</button>
-            <button class="chip" data-f="bags">🎒 Sumkalar</button>
-            <button class="chip" data-f="keys">🔑 Kalitlar</button>
-        </div>
+  <div class="search-box">
+    <h2 class="s-title">Nima qidiryapsiz?</h2>
+    <form method="get" action="{% url 'home' %}" class="s-bar">
+      <div class="s-wrap">
+        <span class="s-ico">🔎</span>
+        <input class="s-inp" name="q" type="search"
+               value="{{ search_query|default:'' }}"
+               placeholder="Telefon, kalitlar, hamyon, it, mushuk..." autocomplete="off"/>
+      </div>
+      <button type="submit" class="btn btn-primary" style="padding:0 26px;border-radius:12px">
+        Qidirish
+      </button>
+    </form>
+
+    <div class="chips" id="chips">
+      <a href="?type=all" class="chip {% if active_type == 'all' or not active_type %}on{% endif %}">Barchasi</a>
+      <a href="?type=lost" class="chip {% if active_type == 'lost' %}on{% endif %}">Yo'qolgan</a>
+      <a href="?type=found" class="chip {% if active_type == 'found' %}on{% endif %}">Topilgan</a>
+      <a href="?category=electronics" class="chip {% if active_category == 'electronics' %}on{% endif %}">📱 Elektronika</a>
+      <a href="?category=documents" class="chip {% if active_category == 'documents' %}on{% endif %}">📄 Hujjatlar</a>
+      <a href="?category=animals" class="chip {% if active_category == 'animals' %}on{% endif %}">🐾 Hayvonlar</a>
+      <a href="?category=jewelry" class="chip {% if active_category == 'jewelry' %}on{% endif %}">💍 Taqinchoqlar</a>
+      <a href="?category=bags" class="chip {% if active_category == 'bags' %}on{% endif %}">🎒 Sumkalar</a>
+      <a href="?category=keys" class="chip {% if active_category == 'keys' %}on{% endif %}">🔑 Kalitlar</a>
     </div>
+  </div>
 </section>
+
 
 <!-- ===================== LISTINGS ===================== -->
 <section class="listings reveal" id="listings">
-    <div class="sec-head">
-        <div><div class="tag">So'nggi e'lonlar</div><h2 class="sec-h2">Faol qidiruvlar</h2></div>
-        <a href="#" class="sec-link">Barchasini ko'rish →</a>
-    </div>
-    <div class="grid" id="cards">
-        <article class="card" data-status="lost" data-cat="electronics">
-            <div class="card-img" style="background:#0d1020">📱
-                <div class="cst"><span class="badge bl">Yo'qolgan</span></div>
-                <div class="cug"><span class="badge bu">SHOSHILINCH</span></div>
-            </div>
-            <div class="card-body">
-                <div class="card-cat">Elektronika</div>
-                <h3 class="card-title">iPhone 15 Pro — Titan rangi</h3>
-                <p class="card-desc">Qora charm chehlisi bor, orqasida kichik chiziq. Ichida muhim ma'lumotlar. Mukofot beriladi!</p>
-                <div class="card-foot"><span class="card-loc">📍 Yunusobod, Toshkent</span><span class="card-rew">500 000 so'm</span></div>
-            </div>
-        </article>
-
-        <article class="card" data-status="found" data-cat="documents">
-            <div class="card-img" style="background:#0e0f18">📄
-                <div class="cst"><span class="badge bf">Topilgan</span></div>
-            </div>
-            <div class="card-body">
-                <div class="card-cat">Hujjatlar</div>
-                <h3 class="card-title">O'zbekiston pasporti topildi</h3>
-                <p class="card-desc">Erkak kishiga tegishli pasport. Chorsu bozori yaqinida topilgan. Egasi aloqa qilsin.</p>
-                <div class="card-foot"><span class="card-loc">📍 Chorsu, Toshkent</span><span class="card-date">Bugun, 14:30</span></div>
-            </div>
-        </article>
-
-        <article class="card" data-status="lost" data-cat="animals">
-            <div class="card-img" style="background:#0d1a0d">🐕
-                <div class="cst"><span class="badge bl">Yo'qolgan</span></div>
-                <div class="cug"><span class="badge bu">SHOSHILINCH</span></div>
-            </div>
-            <div class="card-body">
-                <div class="card-cat">Hayvonlar</div>
-                <h3 class="card-title">Oq Labrador — «Oq'bil»</h3>
-                <p class="card-desc">3 yoshli oq Labrador. Yoqasida sariq tag'ma bor. Bolalar juda xavotirda, iltimos yordam!</p>
-                <div class="card-foot"><span class="card-loc">📍 Chilonzor, Toshkent</span><span class="card-rew">1 000 000 so'm</span></div>
-            </div>
-        </article>
-
-        <article class="card" data-status="found" data-cat="jewelry">
-            <div class="card-img" style="background:#1a1400">💍
-                <div class="cst"><span class="badge bf">Topilgan</span></div>
-            </div>
-            <div class="card-body">
-                <div class="card-cat">Taqinchoqlar</div>
-                <h3 class="card-title">Oltin uzuk topildi</h3>
-                <p class="card-desc">Naqshinakor oltin uzuk. Metro Mustaqillik Maydoni yaqinida topilgan. Egasiga qaytariladi.</p>
-                <div class="card-foot"><span class="card-loc">📍 Mustaqillik maydoni</span><span class="card-date">Kecha, 19:15</span></div>
-            </div>
-        </article>
-
-        <article class="card" data-status="lost" data-cat="bags">
-            <div class="card-img" style="background:#100a1a">🎒
-                <div class="cst"><span class="badge bl">Yo'qolgan</span></div>
-            </div>
-            <div class="card-body">
-                <div class="card-cat">Sumkalar</div>
-                <h3 class="card-title">Qora Nike ryukzak</h3>
-                <p class="card-desc">Ichida noutbuk, hujjatlar va qimmatli narsalar bor. 28-avtobusda qoldirib ketildi.</p>
-                <div class="card-foot"><span class="card-loc">📍 28-avtobus yo'li</span><span class="card-rew">300 000 so'm</span></div>
-            </div>
-        </article>
-
-        <article class="card" data-status="found" data-cat="keys">
-            <div class="card-img" style="background:#1a1000">🔑
-                <div class="cst"><span class="badge bf">Topilgan</span></div>
-            </div>
-            <div class="card-body">
-                <div class="card-cat">Kalitlar</div>
-                <h3 class="card-title">Chevrolet mashina kalitlari</h3>
-                <p class="card-desc">Uchta kalit, Chevrolet signali bor. Yunusobod savdo markazida topilgan.</p>
-                <div class="card-foot"><span class="card-loc">📍 Yunusobod DC</span><span class="card-date">Bugun, 10:00</span></div>
-            </div>
-        </article>
-    </div>
+  <div class="sec-head">
+    <a href="{% url 'items' %}" class="sec-link">Barchasini ko'rish →</a>
+  </div>
+  <div class="grid" id="cards">
+    {% for item in items %}
+      <article class="card" data-status="{{ item.item_type }}" data-cat="{{ item.category.name|lower }}">
+        <div class="card-img">
+          {% if item.image %}
+            <img src="{{ item.image.url }}" alt="{{ item.name }}">
+          {% else %}
+            📦
+          {% endif %}
+          <div class="cst">
+            {% if item.item_type == 'lost' %}
+              <span class="badge bl">Yo'qolgan</span>
+            {% else %}
+              <span class="badge bf">Topilgan</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="card-cat">{{ item.category.name }}</div>
+          <h3 class="card-title">{{ item.name }}</h3>
+          <p class="card-desc">{{ item.description|truncatewords:20 }}</p>
+          <div class="card-foot">
+            <span class="card-loc">📍 {{ item.location.name }}</span>
+            <span class="card-date">{{ item.date|date:"d M Y" }}</span>
+          </div>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
 </section>
+
 
 <!-- ===================== MAP ===================== -->
 <section class="map-sec reveal" id="map">
     <div class="sec-head" style="margin-bottom:22px">
-        <div><div class="tag">Interaktiv xarita</div><h2 class="sec-h2">Toshkent bo'yicha</h2></div>
+        <div>
+            <div class="tag">Interaktiv xarita</div>
+            <h2 class="sec-h2">Toshkent bo'yicha</h2>
+        </div>
     </div>
     <div class="map-wrap">
-        <div class="map-canvas">
-            <svg viewBox="0 0 900 500" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                    <pattern id="pg" width="44" height="44" patternUnits="userSpaceOnUse">
-                        <path d="M44 0L0 0 0 44" fill="none" stroke="rgba(255,255,255,0.025)" stroke-width="1"/>
-                    </pattern>
-                    <radialGradient id="rg" cx="50%" cy="50%" r="60%">
-                        <stop offset="0%" stop-color="rgba(201,168,76,0.05)"/>
-                        <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
-                    </radialGradient>
-                </defs>
-                <rect width="900" height="500" fill="url(#pg)"/>
-                <rect width="900" height="500" fill="url(#rg)"/>
-                <line x1="0" y1="250" x2="900" y2="250" stroke="rgba(255,255,255,0.06)" stroke-width="2.5"/>
-                <line x1="450" y1="0" x2="450" y2="500" stroke="rgba(255,255,255,0.06)" stroke-width="2.5"/>
-                <line x1="0" y1="0" x2="900" y2="500" stroke="rgba(255,255,255,0.03)" stroke-width="1.5"/>
-                <line x1="900" y1="0" x2="0" y2="500" stroke="rgba(255,255,255,0.03)" stroke-width="1.5"/>
-            </svg>
+        <!-- Google Map / Leaflet uchun canvas -->
+        <div id="map-canvas" style="width:100%;height:500px;"></div>
 
-            <!-- Map pins -->
-            <div class="mpin" style="left:60%;top:42%" title="iPhone yo'qolgan — Yunusobod">
-                <svg width="26" height="34" viewBox="0 0 28 36"><path d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 22 14 22s14-11.5 14-22C28 6.27 21.73 0 14 0z" fill="#d95f5f"/><circle cx="14" cy="14" r="5.5" fill="white" opacity=".9"/></svg>
-            </div>
-            <div class="mpin" style="left:36%;top:57%" title="Pasport topilgan — Chorsu">
-                <svg width="26" height="34" viewBox="0 0 28 36"><path d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 22 14 22s14-11.5 14-22C28 6.27 21.73 0 14 0z" fill="#4dab82"/><circle cx="14" cy="14" r="5.5" fill="white" opacity=".9"/></svg>
-            </div>
-            <div class="mpin" style="left:23%;top:35%" title="It yo'qolgan — Chilonzor">
-                <svg width="26" height="34" viewBox="0 0 28 36"><path d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 22 14 22s14-11.5 14-22C28 6.27 21.73 0 14 0z" fill="#d95f5f"/><circle cx="14" cy="14" r="5.5" fill="white" opacity=".9"/></svg>
-            </div>
-            <div class="mpin" style="left:49%;top:64%" title="Uzuk topilgan — Mustaqillik">
-                <svg width="26" height="34" viewBox="0 0 28 36"><path d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 22 14 22s14-11.5 14-22C28 6.27 21.73 0 14 0z" fill="#4dab82"/><circle cx="14" cy="14" r="5.5" fill="white" opacity=".9"/></svg>
-            </div>
-
-            <div class="map-legend">
-                <div class="ml"><div class="ml-dot" style="background:var(--red)"></div>Yo'qolgan</div>
-                <div class="ml"><div class="ml-dot" style="background:var(--green)"></div>Topilgan</div>
-            </div>
-        </div>
         <div class="map-side">
             <h3 class="map-side-h">Yaqin atrofdagi</h3>
-            <p class="map-side-s">6 ta faol e'lon</p>
-            <div class="mlist">
-                <div class="mitem"><div class="mitem-dot" style="background:var(--red)"></div><div><div class="mitem-n">📱 iPhone 15 Pro yo'qoldi</div><div class="mitem-l">Yunusobod · 0.4 km</div></div></div>
-                <div class="mitem"><div class="mitem-dot" style="background:var(--green)"></div><div><div class="mitem-n">📄 Pasport topildi</div><div class="mitem-l">Chorsu · 0.9 km</div></div></div>
-                <div class="mitem"><div class="mitem-dot" style="background:var(--red)"></div><div><div class="mitem-n">🐕 Oq Labrador yo'qoldi</div><div class="mitem-l">Chilonzor · 1.2 km</div></div></div>
-                <div class="mitem"><div class="mitem-dot" style="background:var(--green)"></div><div><div class="mitem-n">💍 Uzuk topildi</div><div class="mitem-l">Mustaqillik · 1.5 km</div></div></div>
+            <p class="map-side-s">Faol e'lonlar</p>
+            <div id="map-list" class="mlist">
+                <!-- JS orqali dinamik ravishda e’lonlar qo‘shiladi -->
             </div>
         </div>
     </div>
@@ -401,5 +320,18 @@
 </footer>
 
 <script src="{% static 'js/app.js' %}"></script>
+<!-- Google Maps API -->
+<script src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&callback=initMap" async defer></script>
+
+<script>
+function initMap() {
+    var tashkent = {lat: 41.2995, lng: 69.2401};
+    var map = new google.maps.Map(document.getElementById('map'), {
+        zoom: 12,
+        center: tashkent
+    });
+}
+</script>
+
 </body>
 </html>

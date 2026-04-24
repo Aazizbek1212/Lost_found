@@ -50,6 +50,19 @@ window.scroll2 = function(id) {
     }
 };
 
+
+// =========================================
+// EMPTY CATEGORY TOGGLE
+// =========================================
+window.toggleEmptyMsg = function(block) {
+    const msg = block.querySelector('.empty-msg');
+    if (msg) {
+        msg.style.display = (msg.style.display === 'none' || msg.style.display === '') 
+            ? 'block' 
+            : 'none';
+    }
+};
+
 // =========================================
 // TOAST NOTIFICATIONS
 // =========================================
@@ -427,4 +440,276 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById("success-rate").innerText = data.success_rate + "%";
         });
     
+});
+
+
+// =========================================
+// GOOGLE MAP INTEGRATSIYA
+// =========================================
+document.addEventListener("DOMContentLoaded", function () {
+    const mapCanvas = document.getElementById("map-canvas");
+    if (!mapCanvas) return;
+
+    function initMap() {
+        const center = { lat: 41.3111, lng: 69.2797 }; // Toshkent markazi
+        const map = new google.maps.Map(mapCanvas, {
+            zoom: 12,
+            center: center,
+        });
+
+        // Backenddan e’lonlarni olish
+        fetch("/items-map/")
+            .then(res => res.json())
+            .then(items => {
+                items.forEach(item => {
+                    const marker = new google.maps.Marker({
+                        position: { lat: item.latitude, lng: item.longitude },
+                        map: map,
+                        title: item.name,
+                        icon: item.item_type === "lost"
+                            ? "http://maps.google.com/mapfiles/ms/icons/red-dot.png"
+                            : "http://maps.google.com/mapfiles/ms/icons/green-dot.png"
+                    });
+
+                    const infoWindow = new google.maps.InfoWindow({
+                        content: `<b>${item.name}</b><br>${item.category} · ${item.location}<br>Status: ${item.status}`
+                    });
+
+                    marker.addListener("click", () => {
+                        infoWindow.open(map, marker);
+                    });
+                });
+            });
+    }
+
+    // Google Maps API chaqirish
+    window.initMap = initMap;
+});
+
+
+// Profil modal elementlari
+let profileModal = null;
+let profileData = null;
+
+// Profil modalni ochish
+async function openProfileModal() {
+    // Modal yaratish (agar mavjud bo'lmasa)
+    if (!profileModal) {
+        createProfileModal();
+    }
+    
+    profileModal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    
+    // Ma'lumotlarni yuklash
+    await loadUserProfile();
+}
+
+// Profil modalni yaratish
+function createProfileModal() {
+    const modalHTML = `
+        <div class="profile-modal-overlay" id="profileModal">
+            <div class="profile-modal">
+                <button class="profile-close" id="profileCloseBtn">✕</button>
+                <div id="profileContent">
+                    <div class="loading-spinner">
+                        <div class="spinner"></div>
+                        <p>Yuklanmoqda...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    profileModal = document.getElementById('profileModal');
+    
+    // Yopish tugmasi
+    document.getElementById('profileCloseBtn').onclick = closeProfileModal;
+    
+    // Background bosilganda yopish
+    profileModal.onclick = function(e) {
+        if (e.target === profileModal) closeProfileModal();
+    };
+}
+
+// Profil ma'lumotlarini yuklash
+async function loadUserProfile() {
+    const contentDiv = document.getElementById('profileContent');
+    if (!contentDiv) return;
+    
+    try {
+        const response = await fetch('/profile/');
+        
+        // Response statusni tekshirish
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        // Profil HTML ni yaratish
+        contentDiv.innerHTML = generateProfileHTML(data);
+        
+        // E'lonlarni yopish tugmalariga event listener qo'shish
+        document.querySelectorAll('.close-item-btn').forEach(btn => {
+            btn.onclick = () => closeUserItem(btn.dataset.id, btn.dataset.name);
+        });
+        
+    } catch (error) {
+        console.error('Profile load error:', error);
+        contentDiv.innerHTML = `
+            <div style="text-align:center;padding:40px;color:#E74C3C">
+                <p>❌ Xatolik: ${error.message}</p>
+                <button onclick="loadUserProfile()" style="margin-top:10px;padding:8px 16px;background:#F5A623;border:none;border-radius:8px;cursor:pointer">Qayta urinish</button>
+            </div>
+        `;
+    }
+}
+
+// Profil HTML ni yaratish
+function generateProfileHTML(data) {
+    // Status class va text
+    const getStatusClass = (status) => {
+        const classes = {
+            'active': 'status-active',
+            'found': 'status-found', 
+            'success': 'status-success',
+            'reported': 'status-reported'
+        };
+        return classes[status] || 'status-active';
+    };
+    
+    const getStatusText = (status) => {
+        const texts = {
+            'active': 'Aktiv',
+            'found': 'Topilgan',
+            'success': 'Muvaffaqiyatli',
+            'reported': 'Report qilingan'
+        };
+        return texts[status] || status;
+    };
+    
+    // E'lonlar ro'yxati
+    const itemsHTML = data.items.map(item => `
+        <div class="user-item-card">
+            <div class="user-item-img">
+                ${item.image ? `<img src="${item.image}" alt="${item.name}">` : (item.item_type === 'lost' ? '🔴' : '🟢')}
+            </div>
+            <div class="user-item-info">
+                <div class="user-item-name">${escapeHtml(item.name)}</div>
+                <div class="user-item-meta">
+                    <span>${item.item_type_display}</span>
+                    <span>📍 ${escapeHtml(item.location)}</span>
+                    <span>📅 ${item.date}</span>
+                </div>
+                <div>
+                    <span class="user-item-status ${getStatusClass(item.status)}">${getStatusText(item.status)}</span>
+                </div>
+            </div>
+            ${item.status === 'active' ? `
+                <button class="close-item-btn" data-id="${item.id}" data-name="${escapeHtml(item.name)}">
+                    🔒 E'lonni yopish
+                </button>
+            ` : `
+                <span style="font-size:12px;color:#2ECC71">✅ Yopilgan</span>
+            `}
+        </div>
+    `).join('');
+    
+    return `
+        <div class="profile-header">
+            <div class="profile-avatar">${data.username.charAt(0).toUpperCase()}</div>
+            <div class="profile-name">${escapeHtml(data.first_name || data.username)}</div>
+            <div class="profile-email">${escapeHtml(data.email || 'Email kiritilmagan')}</div>
+        </div>
+        <div class="profile-stats">
+            <div class="stat-card">
+                <div class="stat-number">${data.items_count}</div>
+                <div class="stat-label">E'lonlar</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">${data.items.filter(i => i.status === 'active').length}</div>
+                <div class="stat-label">Aktiv</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">${data.items.filter(i => i.status !== 'active').length}</div>
+                <div class="stat-label">Yopilgan</div>
+            </div>
+        </div>
+        <div class="profile-info">
+            <div class="info-row">
+                <div class="info-label">Username</div>
+                <div class="info-value">${escapeHtml(data.username)}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Ro'yxatdan o'tgan</div>
+                <div class="info-value">${data.date_joined}</div>
+            </div>
+        </div>
+        <div class="profile-items">
+            <div class="items-title">📦 Mening e'lonlarim (${data.items_count})</div>
+            ${itemsHTML || '<p style="text-align:center;color:rgba(255,255,255,0.5);padding:20px">Hali e\'lon berilmagan</p>'}
+        </div>
+    `;
+}
+
+// XSS himoyasi uchun
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+// E'lonni yopish
+async function closeUserItem(itemId, itemName) {
+    if (!confirm(`"${itemName}" e'lonini yopishni tasdiqlaysizmi?`)) return;
+    
+    try {
+        const response = await fetch(`/item/${itemId}/close/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCsrfToken(),
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast(data.message, 'success');
+            await loadUserProfile(); // Profilni qayta yuklash
+        } else {
+            showToast(data.message, 'error');
+        }
+    } catch (error) {
+        showToast('Xatolik yuz berdi', 'error');
+    }
+}
+
+// Profil modalni yopish
+async function openProfileModal() {
+    let modal = document.getElementById('profileModal');
+    
+    if (!modal) {
+        createProfileModal();
+        modal = document.getElementById('profileModal');
+    }
+    
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    await loadUserProfile();
+}
+
+function closeProfileModal() {
+    const modal = document.getElementById('profileModal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+}
+// Escape tugmasi bilan yopish
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && profileModal && profileModal.style.display === 'flex') {
+        closeProfileModal();
+    }
 });

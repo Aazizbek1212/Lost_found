@@ -323,4 +323,72 @@ document.addEventListener('DOMContentLoaded', function() {
 // =========================================
 // EXPOSE APP TO WINDOW FOR ONCLICK HANDLERS
 // =========================================
-window.app = app;                    
+window.app = app;  
+
+
+        // Parol kuchini tekshirish
+        function checkStrength(val) {
+            let score = 0;
+            if (val.length >= 8) score++;
+            if (/[A-Z]/.test(val)) score++;
+            if (/[0-9]/.test(val)) score++;
+            if (/[^A-Za-z0-9]/.test(val)) score++;
+
+            const colors = ['#c0392b', '#e67e22', '#f1c40f', '#27ae60'];
+            const labels = ['Juda zaif', 'Zaif', 'O\'rtacha', 'Kuchli 💪'];
+
+            // Segmentlarni yangilash
+            for (let i = 1; i <= 4; i++) {
+                const seg = document.getElementById('seg' + i);
+                if (seg) {
+                    seg.style.background = i <= score ? colors[score - 1] : 'var(--border)';
+                }
+            }
+
+            // Matnni yangilash
+            const txt = document.getElementById('strength-text');
+            if (txt) {
+                txt.textContent = val ? (labels[score - 1] || labels[0]) : 'Parol kuchini tekshirmoqda...';
+                txt.style.color = val ? colors[score - 1] : 'var(--muted)';
+            }
+        }
+
+        // Parolni ko'rsatish/yashirish
+        function togglePass(id, btn) {
+            const input = document.getElementById(id);
+            if (input) {
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    btn.textContent = '🙈';
+                } else {
+                    input.type = 'password';
+                    btn.textContent = '👁';
+                }
+            }
+        }
+
+        // Parollar mosligini tekshirish
+        function checkPasswordMatch() {
+            const pass = document.getElementById('pass')?.value;
+            const pass2 = document.getElementById('pass2')?.value;
+            const errEl = document.getElementById('pass2-err');
+            
+            if (pass && pass2 && pass !== pass2) {
+                errEl.classList.add('visible');
+            } else {
+                errEl.classList.remove('visible');
+            }
+        }
+
+        // Telefon formatlash
+        document.addEventListener('DOMContentLoaded', function() {
+            const phoneInput = document.getElementById('phone');
+            if (phoneInput) {
+                phoneInput.addEventListener('input', function() {
+                    let val = this.value.replace(/\D/g, '');
+                    if (val && !val.startsWith('998')) val = '998' + val;
+                    if (val) this.value = '+' + val.slice(0, 12);
+                });
+            }
+        });
+

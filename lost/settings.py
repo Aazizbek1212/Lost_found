@@ -13,16 +13,9 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 import os
 
-from dotenv import load_dotenv
-
-# .env faylni yuklash
-load_dotenv()
-
-# GEMINI API kalitini olish
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-
-if not GEMINI_API_KEY:
-    pass  # .env faylni sozlang
+# GEMINI API kalitini olish (env dan yoki to'g'ridan)
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.

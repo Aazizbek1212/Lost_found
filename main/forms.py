@@ -1,20 +1,30 @@
 from django import forms
 from .models import Category, Item, Location
-from django import forms
-from .models import Item
-from google import genai
 import os
-from dotenv import load_dotenv
+
+# GEMINI API - faqat mavjud bo'lsa
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+if GEMINI_API_KEY:
+    from google import genai
+    client = genai.Client(api_key=GEMINI_API_KEY)
+else:
+    client = None
 
 
 class ItemForm(forms.ModelForm):
     category = forms.ModelChoiceField(
         queryset=Category.objects.all(),
-        widget=forms.Select(attrs={'class': 'form-control'})
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        required=False
     )
-    location = forms.ModelChoiceField(
+    city = forms.ModelChoiceField(
         queryset=Location.objects.all(),
-        widget=forms.Select(attrs={'class': 'form-control'})
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        required=False
+    )
+    location = forms.CharField(
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Masalan: Chilonzor, Yunusobod...'}),
+        required=False
     )
 
     class Meta:
@@ -25,25 +35,18 @@ class ItemForm(forms.ModelForm):
             'description',
             'image',
             'category',
-            'location',
+            'city',        # yangi ForeignKey
+            'location',    # matn maydoni
             'date',
             'contact_info'
         ]
-
-
-load_dotenv()
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-
-class ItemForm(forms.ModelForm):
-    class Meta:
-        model = Item
-        fields = ["description", "category", "location"]
 
     def clean(self):
         cleaned_data = super().clean()
         description = cleaned_data.get("description")
 
-        if description and (not cleaned_data.get("category") or not cleaned_data.get("location")):
+        # AI yordamida kategoriya va joylashuv aniqlash
+        if client and description and (not cleaned_data.get("category") or not cleaned_data.get("location")):
             prompt = f"""
             Foydalanuvchi e'lon matni: "{description}"
 
@@ -61,9 +64,14 @@ class ItemForm(forms.ModelForm):
                 result = response.text
 
                 if "Kategoriya:" in result and not cleaned_data.get("category"):
-                    cleaned_data["category"] = result.split("Kategoriya:")[1].split("\n")[0].strip()
+                    cat_name = result.split("Kategoriya:")[1].split("\n")[0].strip()
+                    category_obj = Category.objects.filter(name__iexact=cat_name).first()
+                    if category_obj:
+                        cleaned_data["category"] = category_obj
+
                 if "Joylashuv:" in result and not cleaned_data.get("location"):
-                    cleaned_data["location"] = result.split("Joylashuv:")[1].split("\n")[0].strip()
+                    loc_name = result.split("Joylashuv:")[1].split("\n")[0].strip()
+                    cleaned_data["location"] = loc_name
 
             except Exception:
                 pass  # AI aniqlash muvaffaqiyatsiz

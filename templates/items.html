@@ -26,14 +26,15 @@
     {% if user.is_authenticated %}
       <a href="#" class="btn-dark">{{ user.username }}</a>
       <a href="{% url 'logout' %}" class="btn-dark">Chiqish</a>
-      <button class="btn btn-primary" onclick="openModal()">+ E'lon berish</button>
+      <button id="openModalBtn" type="button" class="btn-primary">+ E'lon berish</button>
     {% else %}
       <a href="{% url 'login' %}" class="btn-dark">Kirish</a>
       <a href="{% url 'register' %}" class="btn-dark">Ro'yxatdan o'tish</a>
     {% endif %}
   </div>
 </nav>
- {% if messages %}
+
+{% if messages %}
   <div class="messages">
     {% for message in messages %}
       <div class="alert alert-{{ message.tags }}">
@@ -49,42 +50,43 @@
   <h1>Yo'qotdingizmi?<br>Biz <em>topamiz</em></h1>
   <p>Yo'qolgan yoki topilgan buyumlar haqida e'lon bering. Hamjamiyat kuchi bilan qaytarib oling.</p>
   <div class="hero-actions">
-    <button class="btn-hero" onclick="openModal('lost')">📢 Yo'qolgan e'lon</button>
-    <button class="btn-outline" onclick="openModal('found')">✋ Topilgan e'lon</button>
+    <button class="btn-hero" type="button" onclick="openModal('lost')">📢 Yo'qolgan e'lon</button>
+    <button class="btn-outline" type="button" onclick="openModal('found')">✋ Topilgan e'lon</button>
   </div>
 </div>
 
 <!-- STATS -->
 <div class="stats">
   <div class="stat">
-    <div class="num" id="totalLost">148</div>
+    <div class="num">{{ total_lost }}</div>
     <div class="label">Yo'qolgan e'lonlar</div>
   </div>
   <div class="stat">
-    <div class="num" id="totalFound">93</div>
+    <div class="num">{{ total_found }}</div>
     <div class="label">Topilgan e'lonlar</div>
   </div>
   <div class="stat">
-    <div class="num" id="totalReturned">61</div>
-    <div class="label">Qaytarib berilgan</div>
+    <div class="num">{{ total_returned }}</div>
+    <div class="label">Muvoffaqiyatli</div>
   </div>
 </div>
 
 <!-- SEARCH -->
 <div class="search-section">
-  <div class="search-bar">
-    <input type="text" id="searchInput" placeholder="Buyum nomi, joy yoki tavsif bo'yicha qidiring..." oninput="filterCards()">
-    <button class="btn-primary" onclick="filterCards()">Qidirish</button>
-  </div>
+  <form method="get" action="{% url 'items' %}" class="search-bar">
+    <input type="text" name="q" value="{{ search_query|default:'' }}"
+           placeholder="Buyum nomi bo'yicha qidiring...">
+    <button type="submit" class="btn-primary">Qidirish</button>
+  </form>
   <div class="filter-row">
-    <button class="chip active" onclick="filterByType('all', this)">Hammasi</button>
-    <button class="chip" onclick="filterByType('lost', this)">🔴 Yo'qolgan</button>
-    <button class="chip" onclick="filterByType('found', this)">🟢 Topilgan</button>
-    <button class="chip" onclick="filterByCategory('Hujjat', this)">📄 Hujjat</button>
-    <button class="chip" onclick="filterByCategory('Telefon', this)">📱 Telefon</button>
-    <button class="chip" onclick="filterByCategory('Hamyon', this)">👜 Hamyon</button>
-    <button class="chip" onclick="filterByCategory('Kalit', this)">🔑 Kalit</button>
-    <button class="chip" onclick="filterByCategory('Sumka', this)">🎒 Sumka</button>
+    <a href="?type=all" class="chip {% if active_type == 'all' or not active_type %}active{% endif %}">Hammasi</a>
+    <a href="?type=lost" class="chip {% if active_type == 'lost' %}active{% endif %}">🔴 Yo'qolgan</a>
+    <a href="?type=found" class="chip {% if active_type == 'found' %}active{% endif %}">🟢 Topilgan</a>
+    <a href="?category=Hujjat" class="chip {% if active_category == 'Hujjat' %}active{% endif %}">📄 Hujjat</a>
+    <a href="?category=Telefon" class="chip {% if active_category == 'Telefon' %}active{% endif %}">📱 Telefon</a>
+    <a href="?category=Hamyon" class="chip {% if active_category == 'Hamyon' %}active{% endif %}">👜 Hamyon</a>
+    <a href="?category=Kalit" class="chip {% if active_category == 'Kalit' %}active{% endif %}">🔑 Kalit</a>
+    <a href="?category=Sumka" class="chip {% if active_category == 'Sumka' %}active{% endif %}">🎒 Sumka</a>
   </div>
 </div>
 
@@ -92,32 +94,32 @@
 <div class="section">
   <div class="section-header">
     <div class="section-title">So'nggi e'lonlar</div>
-    <a href="#" class="see-all">Hammasini ko'rish →</a>
   </div>
   <div class="cards-grid" id="cardsGrid">
-  {% for item in items %}
-    <div class="card {{ item.item_type }}">
-      <div class="card-image">
-        {% if item.image %}
-          <img src="{{ item.image.url }}" alt="{{ item.name }}">
-        {% else %}
-          <div class="no-image">📷</div>
-        {% endif %}
-      </div>
-      <div class="card-body">
-        <h3>{{ item.name }}</h3>
-        <p class="meta">
-          📅 {{ item.date }} | 
-          {% if item.category %}{{ item.category.name }}{% else %}-{% endif %} | 
-          📍 {% if item.location %}{{ item.location.name }}{% else %}-{% endif %}
-        </p>
-        <p>{{ item.description|truncatewords:20 }}</p>
-        <p class="contact">☎ {{ item.contact_info }}</p>
-      </div>
-    </div>
-  {% empty %}
-    <p class="no-items">Hozircha e'lonlar yo'q.</p>
-  {% endfor %}
+    {% for item in items %}
+      <a href="{% url 'item_detail' item.pk %}" class="card {{ item.item_type }}" style="text-decoration:none;color:inherit;display:block">
+        <div class="card-image">
+          {% if item.image %}
+            <img src="{{ item.image.url }}" alt="{{ item.name }}">
+          {% else %}
+            <div class="no-image">📷</div>
+          {% endif %}
+        </div>
+        <div class="card-body">
+          <h3>{{ item.name }}</h3>
+          <p class="meta">
+            📅 {{ item.date }} | 
+            {% if item.category %}{{ item.category.name }}{% else %}-{% endif %} | 
+            📍 {% if item.location %}{{ item.location }}{% else %}-{% endif %}
+          </p>
+          <p>{{ item.description|truncatewords:20 }}</p>
+          <p class="contact">☎ {{ item.contact_info }}</p>
+        </div>
+      </a>
+    {% empty %}
+      <p class="no-items">Hozircha e'lonlar yo'q.</p>
+    {% endfor %}
+  </div>
 </div>
 
 <!-- MODAL -->
@@ -128,6 +130,7 @@
     <form method="post" action="{% url 'add_item' %}" enctype="multipart/form-data">
       <input type="hidden" name="item_type" id="itemType" value="lost">
       {% csrf_token %}
+      
       <div class="type-toggle">
         <button type="button" class="type-btn active-lost" id="btnLost" onclick="setType('lost')">🔴 Yo'qolgan</button>
         <button type="button" class="type-btn" id="btnFound" onclick="setType('found')">🟢 Topilgan</button>
@@ -144,7 +147,12 @@
       </div>
 
       <div class="form-group">
-        <label>Joy</label>
+        <label>Shahar / Tuman</label>
+        {{ form.city }}
+      </div>
+
+      <div class="form-group">
+        <label>Manzil</label>
         {{ form.location }}
       </div>
 
@@ -173,6 +181,7 @@
         <button type="submit" class="btn-submit">E'lonni joylash</button>
       </div>
     </form>
+
   </div>
 </div>
 

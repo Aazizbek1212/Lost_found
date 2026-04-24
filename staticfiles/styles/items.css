@@ -328,35 +328,37 @@ nav a:hover { color: var(--text); background: var(--card); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-.card:nth-child(1) { animation-delay: 0.05s; }
-.card:nth-child(2) { animation-delay: 0.1s; }
-.card:nth-child(3) { animation-delay: 0.15s; }
-.card:nth-child(4) { animation-delay: 0.2s; }
-.card:nth-child(5) { animation-delay: 0.25s; }
-.card:nth-child(6) { animation-delay: 0.3s; }
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.25s;
+  animation: fadeUp 0.4s ease both;
+}
 
-.card-img {
+.card:nth-child(n) {
+  animation-delay: calc(var(--card-index, 0) * 0.05s);
+}
+
+
+/* Rasmlar hajmini to'g'irlash */
+.card-image {
   width: 100%;
-  height: 170px;
-  object-fit: cover;
-  background: var(--surface);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 3rem;
-  position: relative;
+  height: 220px; /* kartaning balandligini bir xil qilish */
+  overflow: hidden;
+  border-radius: 10px;
+  background-color: var(--surface);
 }
 
-.card-img .status-dot {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  padding: 4px 10px;
-  border-radius: 50px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.3px;
+.card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* rasm nisbatini saqlab to'ldiradi */
+  display: block;
 }
+
 
 .status-lost {
   background: rgba(232,72,85,0.2);
@@ -405,18 +407,21 @@ nav a:hover { color: var(--text); background: var(--card); }
 
 /* MODAL */
 .modal-overlay {
-  display: none;
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.75);
   z-index: 200;
   backdrop-filter: blur(8px);
-  align-items: center;
-  justify-content: center;
+  display: none;              /* defaultda yashirin */
+  align-items: center;        /* vertikal markazlashtirish */
+  justify-content: center;    /* gorizontal markazlashtirish */
   padding: 20px;
 }
 
-.modal-overlay.open { display: flex; }
+.modal-overlay.open {
+  display: flex;              /* ochilganda flex bo‘ladi */
+}
+
 
 .modal {
   background: var(--card);
