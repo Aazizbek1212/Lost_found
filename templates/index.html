@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com"/>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
     <link rel="stylesheet" href="{% static 'styles/main.css' %}" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
 
@@ -68,10 +69,7 @@
         👤 {{ user.username }}
     </a>
         <a href="{% url 'logout' %}" class="btn btn-ghost">Chiqish</a>
-        <button class="btn btn-primary" onclick="openModal()">+ E'lon berish</button>
-
         <button class="btn btn-ghost chat-btn" id="open-chat-btn">💬</button>
-
         <!-- Chat modal -->
         <div id="chat-modal" class="chat-modal-overlay">
             <div class="chat-modal">
@@ -103,56 +101,62 @@
     <div class="blob b2"></div>
     <div class="blob b3"></div>
 
+    <!-- Chap taraf matn -->
     <div class="hero-l">
         <div class="hero-badge"><i></i> O'zbekistonda №1 platforma</div>
         <h1 class="hero-h1">Yo'qotdingizmi?<br>Biz <em>topamiz.</em></h1>
-        <p class="hero-sub">Yo'qolgan narsangizni e'lon qiling yoki topganingizni egasiga qaytaring. Kuniga 500+ odamga yordam beramiz.</p>
+        <p class="hero-sub">Yo'qolgan narsangizni e'lon qiling yoki topganingizni egasiga qaytaring.</p>
         <div class="hero-cta">
-            <button class="btn btn-primary btn-lg" onclick="openModal()">🔎 E'lon berish — Bepul</button>
-            <button class="btn btn-ghost btn-lg" onclick="scroll2('listings')">Topilganlarni ko'rish →</button>
+            <a href="{% url 'items' %}" class="btn btn-ghost btn-lg">
+                Barcha e'lonlarni ko'rish →
+            </a>
         </div>
     </div>
 
+    <!-- O'ng taraf (hero-r) - kartalar + statistika bir qatorda -->
     <div class="hero-r">
-    {% for last_item in last_item %}
-    <div class="fcard">
-        <div class="fcard-row">
-            <div>
-                <div class="fcard-t">{{ last_item.description }}</div>
-                <div class="fcard-m">📍 {{ last_item.location.name }} · {{ last_item.date|timesince }} oldin</div>
+        <!-- KARTALAR (3 ta) -->
+        <div class="fcarfds">
+            {% for item in last_three_items %}
+            <div class="fcard">
+                <div class="fcard-row">
+                    <div>
+                        <div class="fcard-t">{{ item.description|truncatewords:8 }}</div>
+                        <div class="fcard-m">📍 {{ item.location.name }} · {{ item.date|timesince }} oldin</div>
+                    </div>
+                </div>
+                <div class="fcard-badges">
+                    {% if item.item_type == "lost" %}
+                        <span class="badge bl">Yo'qolgan</span>
+                    {% else %}
+                        <span class="badge bf">Topilgan</span>
+                    {% endif %}
+                    {% if item.urgent %}
+                        <span class="badge bu">SHOSHILINCH</span>
+                    {% endif %}
+                </div>
             </div>
+            {% empty %}
+                <p class="no-items">Hozircha e'lon yo'q</p>
+            {% endfor %}
         </div>
-        {% if last_item.status == "lost" %}
-            <span class="badge bl">Yo'qolgan</span>
-        {% else %}
-            <span class="badge bf">Topilgan</span>
-        {% endif %}
-        {% if last_item.urgent %}
-            <span class="badge bu" style="margin-left:6px">SHOSHILINCH</span>
-        {% endif %}
-    </div>
-    {% endfor %}
 
-    <div class="stat-row">
-        <div class="sc">
-            <div class="sn"><span class="cnt">{{ total_items }}</span></div>
-            <div class="sl">Jami e'lon</div>
-        </div>
-        <div class="sc">
-            <div class="sn" style="color:var(--green)">
-                <span class="cnt">{{ found_items }}</span>
+        <!-- STATISTIKA (kartalardan keyin, bir qatorda) -->
+        <div class="stat-row">
+            <div class="sc">
+                <div class="sn">{{ total_active|default:"0" }}</div>
+                <div class="sl">JAMI E'LON</div>
             </div>
-            <div class="sl">Topildi</div>
-        </div>
-        <div class="sc">
-            <div class="sn">
-                <span class="cnt">{{ success_rate }}%</span>
+            <div class="sc">
+                <div class="sn" style="color:#10b981">{{ total_success|default:"0" }}</div>
+                <div class="sl">MUVAFFAQIYAT</div>
             </div>
-            <div class="sl">Muvaffaqiyat</div>
+            <div class="sc">
+                <div class="sn">{{ success_rate|default:"0" }}%</div>
+                <div class="sl">MUVAFFAQIYAT</div>
+            </div>
         </div>
     </div>
-</div>
-
 </section>
 
 <!-- ===================== SEARCH ===================== -->
@@ -172,16 +176,37 @@
     </form>
 
     <div class="chips" id="chips">
-      <a href="?type=all" class="chip {% if active_type == 'all' or not active_type %}on{% endif %}">Barchasi</a>
-      <a href="?type=lost" class="chip {% if active_type == 'lost' %}on{% endif %}">Yo'qolgan</a>
-      <a href="?type=found" class="chip {% if active_type == 'found' %}on{% endif %}">Topilgan</a>
-      <a href="?category=electronics" class="chip {% if active_category == 'electronics' %}on{% endif %}">📱 Elektronika</a>
-      <a href="?category=documents" class="chip {% if active_category == 'documents' %}on{% endif %}">📄 Hujjatlar</a>
-      <a href="?category=animals" class="chip {% if active_category == 'animals' %}on{% endif %}">🐾 Hayvonlar</a>
-      <a href="?category=jewelry" class="chip {% if active_category == 'jewelry' %}on{% endif %}">💍 Taqinchoqlar</a>
-      <a href="?category=bags" class="chip {% if active_category == 'bags' %}on{% endif %}">🎒 Sumkalar</a>
-      <a href="?category=keys" class="chip {% if active_category == 'keys' %}on{% endif %}">🔑 Kalitlar</a>
+        <a href="?type=all{% if active_category %}&category={{ active_category }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" 
+        class="chip {% if active_type == 'all' or not active_type %}on{% endif %}">
+        Barchasi
+        </a>
+        
+        <a href="?type=lost{% if active_category %}&category={{ active_category }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" 
+        class="chip {% if active_type == 'lost' %}on{% endif %}">
+        Yo'qolgan
+        </a>
+        
+        <a href="?type=found{% if active_category %}&category={{ active_category }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" 
+        class="chip {% if active_type == 'found' %}on{% endif %}">
+        Topilgan
+        </a>
+
+        <a href="?category=Kompyuter va elektronika{% if active_type and active_type != 'all' %}&type={{ active_type }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" 
+        class="chip {% if active_category == 'Kompyuter va elektronika' %}on{% endif %}">💻 Kompyuter va elektronika</a>
+
+        <a href="?category=Soat va zargarlik{% if active_type and active_type != 'all' %}&type={{ active_type }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" 
+        class="chip {% if active_category == 'Soat va zargarlik' %}on{% endif %}">💍 Soat va zargarlik</a>
+
+        <a href="?category=Sumka va ryukzaklar{% if active_type and active_type != 'all' %}&type={{ active_type }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" 
+        class="chip {% if active_category == 'Sumka va ryukzaklar' %}on{% endif %}">🎒 Sumka va ryukzaklar</a>
+
+        <a href="?category=Hujjatlar va kartalar{% if active_type and active_type != 'all' %}&type={{ active_type }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" 
+        class="chip {% if active_category == 'Hujjatlar va kartalar' %}on{% endif %}">📄 Hujjatlar va kartalar</a>
+
+        <a href="?category=Telefon va aksessuarlar{% if active_type and active_type != 'all' %}&type={{ active_type }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" 
+        class="chip {% if active_category == 'Telefon va aksessuarlar' %}on{% endif %}">📱 Telefon va aksessuarlar</a>
     </div>
+
   </div>
 </section>
 
@@ -192,13 +217,13 @@
     <a href="{% url 'items' %}" class="sec-link">Barchasini ko'rish →</a>
   </div>
   <div class="grid" id="cards">
-    {% for item in items %}
+    {% for item in items %}   {# items - to'g'ri o'zgaruvchi #}
       <article class="card" data-status="{{ item.item_type }}" data-cat="{{ item.category.name|lower }}">
         <div class="card-img">
           {% if item.image %}
             <img src="{{ item.image.url }}" alt="{{ item.name }}">
           {% else %}
-            📦
+            <div class="no-image">📦</div>
           {% endif %}
           <div class="cst">
             {% if item.item_type == 'lost' %}
@@ -209,15 +234,28 @@
           </div>
         </div>
         <div class="card-body">
-          <div class="card-cat">{{ item.category.name }}</div>
+          <div class="card-cat">{{ item.category.name|default:"Kategoriya yo'q" }}</div>
           <h3 class="card-title">{{ item.name }}</h3>
           <p class="card-desc">{{ item.description|truncatewords:20 }}</p>
           <div class="card-foot">
-            <span class="card-loc">📍 {{ item.location.name }}</span>
-            <span class="card-date">{{ item.date|date:"d M Y" }}</span>
+            {# location o'rniga district va address #}
+            <span class="card-loc">
+              📍 
+              {% if item.district %}
+                {{ item.district }}
+              {% elif item.address %}
+                {{ item.address|truncatewords:3 }}
+              {% else %}
+                Manzil yo'q
+              {% endif %}
+            </span>
+            
+            <span class="card-date">{{ item.date|date:'d M Y' }}</span>
           </div>
         </div>
       </article>
+    {% empty %}
+      <p class="no-items">Hozircha hech qanday e'lon yo'q.</p>
     {% endfor %}
   </div>
 </section>
@@ -228,15 +266,49 @@
     <div class="sec-head" style="margin-bottom:22px">
         <div>
             <div class="tag">Interaktiv xarita</div>
-            <h2 class="sec-h2">Toshkent bo'yicha</h2>
+            <h2 class="sec-h2">Joylashuvni belgilash</h2>
         </div>
     </div>
-    <div class="map-wrap">
-        <!-- Google Map / Leaflet uchun canvas -->
-        <div id="map-canvas" style="width:100%;height:500px;"></div>
 
+    <div class="map-wrap">
+        <!-- Xarita -->
+        <div id="map-canvas" style="width:100%; height:500px; border-radius: 16px;"></div>
+
+        <!-- O'ng tarafdagi panel -->
         <div class="map-side">
-            <h3 class="map-side-h">Yaqin atrofdagi</h3>
+            <h3 class="map-side-h">Joylashuvni qidirish</h3>
+            <p class="map-side-s">Tuman va manzilni yozing</p>
+            
+            <div class="map-search-form">
+                <select id="districtSelect" class="form-control" style="width:100%; padding:10px; margin-bottom:12px; border-radius:8px;">
+                    <option value="">Tumanni tanlang</option>
+                    <option value="Yunusobod">Yunusobod</option>
+                    <option value="Chilonzor">Chilonzor</option>
+                    <option value="Mirzo Ulug'bek">Mirzo Ulug'bek</option>
+                    <option value="Shayxontohur">Shayxontohur</option>
+                    <option value="Yakkasaroy">Yakkasaroy</option>
+                    <option value="Uchtepa">Uchtepa</option>
+                    <option value="Olmazor">Olmazor</option>
+                    <option value="Bektemir">Bektemir</option>
+                    <option value="Mirobod">Mirobod</option>
+                    <option value="Sergeli">Sergeli</option>
+                </select>
+                
+                <input type="text" id="addressInput" class="form-control" 
+                       placeholder="Ko'cha va uy raqami (masalan: Ahmad Donish 12)"
+                       style="width:100%; padding:10px; margin-bottom:12px; border-radius:8px;">
+                
+                <button id="searchOnMapBtn" class="btn btn-primary" style="width:100%; margin-bottom:12px;">
+                    🔍 Xaritada belgilash
+                </button>
+                
+                <div id="mapResult" style="display:none; margin-top:15px; padding:12px; background:#f0f0f0; border-radius:8px;">
+                    <strong>📍 Belgilangan joy:</strong>
+                    <p id="coordDisplay" style="margin-top:8px; font-size:12px;"></p>
+                </div>
+            </div>
+
+            <h3 class="map-side-h" style="margin-top:24px;">Yaqin atrofdagi e'lonlar</h3>
             <p class="map-side-s">Faol e'lonlar</p>
             <div id="map-list" class="mlist">
                 <!-- JS orqali dinamik ravishda e’lonlar qo‘shiladi -->
@@ -321,17 +393,8 @@
 
 <script src="{% static 'js/app.js' %}"></script>
 <!-- Google Maps API -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&callback=initMap" async defer></script>
-
-<script>
-function initMap() {
-    var tashkent = {lat: 41.2995, lng: 69.2401};
-    var map = new google.maps.Map(document.getElementById('map'), {
-        zoom: 12,
-        center: tashkent
-    });
-}
-</script>
 
 </body>
 </html>

@@ -32,8 +32,9 @@ class Item(models.Model):
     description = models.TextField()
     image = models.ImageField(upload_to='items/', null=True, blank=True)
     category = models.ForeignKey('Category', on_delete=models.SET_NULL, null=True, blank=True)
-    location = models.CharField(max_length=150, null=True, blank=True)
-    city = models.ForeignKey('Location', on_delete=models.SET_NULL, null=True, blank=True)
+    address = models.CharField(max_length=150, null=True, blank=True)  # Ko'cha, uy
+    district = models.CharField(max_length=100, null=True, blank=True)  # 🆕 Tuman (Yunusobod, Chilonzor...)
+    city = models.ForeignKey(Location,on_delete=models.SET_NULL, null=True, blank=True)
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
     date = models.DateField()
@@ -45,19 +46,31 @@ class Item(models.Model):
         if self.status == 'success':
             self.is_active = False
         
-        # KOORDINATALARNI SAQLASH - TO'G'RILANGAN QISM
-        if self.location and not (self.latitude and self.longitude):
-            from .utils import get_coordinates
-            lat, lng = get_coordinates(self.location)
-            if lat and lng:
-                self.latitude = lat
-                self.longitude = lng
+        if not (self.latitude and self.longitude):
+            full_address = ""
+            
+            # Faqat tuman va address (ko'cha/uy) ni qo'shamiz
+            if self.district:
+                full_address += f"{self.district} tumani"
+            if self.address:
+                if full_address:
+                    full_address += f", {self.address}"
+                else:
+                    full_address += self.address
+            
+            # City ni QO'SHMAYMIZ (faqat tuman + ko'cha/uy)
+            
+            if full_address:
+                from .utils import get_coordinates
+                lat, lng = get_coordinates(full_address)
+                if lat and lng:
+                    self.latitude = lat
+                    self.longitude = lng
                 
         super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.name} ({self.get_item_type_display()})"
-
 
 class Comment(models.Model):
     item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='comments')

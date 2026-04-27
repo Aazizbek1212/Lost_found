@@ -713,117 +713,93 @@ nav a:hover::after {
 /* =========================================
    MAP
 ========================================= */
-.map-sec { 
-    padding: 0 64px 72px; 
-}
 .map-wrap {
-    background: var(--ink2); 
-    border: 1px solid var(--border); 
-    border-radius: 20px;
-    overflow: hidden; 
-    display: grid; 
-    grid-template-columns: 1fr 310px; 
-    min-height: 460px;
-}
-.map-canvas { 
-    position: relative; 
-    overflow: hidden; 
-    background: #070910; 
-}
-.map-canvas svg { 
-    position: absolute; 
-    inset: 0; 
-    width: 100%; 
-    height: 100%; 
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
 }
 
-.mpin {
-    position: absolute; 
-    transform: translate(-50%,-100%);
-    cursor: none; 
-    transition: transform .2s; 
-    filter: drop-shadow(0 4px 10px rgba(0,0,0,.6));
-}
-.mpin:hover { 
-    transform: translate(-50%,-100%) scale(1.28); 
+#map-canvas {
+    flex: 2;
+    min-width: 300px;
+    border-radius: 16px;
+    z-index: 1;
 }
 
-.map-legend {
-    position: absolute; 
-    bottom: 18px; 
-    left: 18px;
-    background: rgba(7,9,16,.88); 
-    border: 1px solid var(--border);
-    backdrop-filter: blur(12px); 
-    border-radius: 10px; 
-    padding: 9px 15px;
-    display: flex; 
-    gap: 16px; 
-    font-size: 12px; 
-    color: var(--fg2);
-}
-.ml { 
-    display: flex; 
-    align-items: center; 
-    gap: 6px; 
-}
-.ml-dot { 
-    width: 8px; 
-    height: 8px; 
-    border-radius: 50%; 
+.map-side {
+    flex: 1;
+    min-width: 280px;
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    padding: 20px;
+    border: 1px solid rgba(255,255,255,0.1);
 }
 
-.map-side { 
-    padding: 28px; 
-    border-left: 1px solid var(--border); 
-    overflow-y: auto; 
-    scrollbar-width: thin; 
-    scrollbar-color: var(--fg3) transparent; 
+.map-side-h {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
 }
-.map-side-h { 
-    font-family: var(--font-disp); 
-    font-size: 21px; 
-    font-weight: 600; 
-    margin-bottom: 5px; 
+
+.map-side-s {
+    font-size: 13px;
+    opacity: 0.7;
+    margin-bottom: 16px;
 }
-.map-side-s { 
-    font-size: 12.5px; 
-    color: var(--fg2); 
-    margin-bottom: 20px; 
+
+.mlist {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 400px;
+    overflow-y: auto;
 }
-.mlist { 
-    display: flex; 
-    flex-direction: column; 
-    gap: 9px; 
+
+.map-item {
+    padding: 12px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 12px;
+    transition: all 0.2s;
 }
-.mitem { 
-    display: flex; 
-    align-items: center; 
-    gap: 10px; 
-    padding: 12px; 
-    background: var(--ink3); 
-    border: 1px solid var(--border); 
-    border-radius: 12px; 
-    cursor: none; 
-    transition: border-color .3s; 
+
+.map-item:hover {
+    background: rgba(255,255,255,0.15);
+    transform: translateX(-3px);
 }
-.mitem:hover { 
-    border-color: var(--border-g); 
+
+.map-item-t {
+    font-weight: 500;
+    margin-bottom: 6px;
 }
-.mitem-dot { 
-    width: 9px; 
-    height: 9px; 
-    border-radius: 50%; 
-    flex-shrink: 0; 
+
+.map-item-m {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    font-size: 12px;
+    opacity: 0.8;
 }
-.mitem-n { 
-    font-size: 13px; 
-    font-weight: 500; 
+
+.form-control {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+    outline: none;
 }
-.mitem-l { 
-    font-size: 11px; 
-    color: var(--fg3); 
-    margin-top: 2px; 
+
+.form-control::placeholder {
+    color: rgba(255,255,255,0.5);
+}
+
+.form-control:focus {
+    border-color: #0066cc;
+}
+
+@media (max-width: 768px) {
+    .map-wrap {
+        flex-direction: column;
+    }
 }
 
 /* =========================================

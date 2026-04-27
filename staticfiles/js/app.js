@@ -446,45 +446,174 @@ document.addEventListener('DOMContentLoaded', function () {
 // =========================================
 // GOOGLE MAP INTEGRATSIYA
 // =========================================
-document.addEventListener("DOMContentLoaded", function () {
-    const mapCanvas = document.getElementById("map-canvas");
-    if (!mapCanvas) return;
 
-    function initMap() {
-        const center = { lat: 41.3111, lng: 69.2797 }; // Toshkent markazi
-        const map = new google.maps.Map(mapCanvas, {
-            zoom: 12,
-            center: center,
+let map;
+let currentMarker = null;
+let allItems = [];
+
+// Xaritani ishga tushirish
+function initMap() {
+    // Toshkent markazi
+    map = L.map('map-canvas').setView([41.311081, 69.240562], 12);
+    
+    // Xarita layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+    
+    // Xaritani bosganda marker qo'yish
+    map.on('click', async function(e) {
+        const lat = e.latlng.lat;
+        const lng = e.latlng.lng;
+        
+        // Markerni yangilash
+        if (currentMarker) {
+            map.removeLayer(currentMarker);
+        }
+        currentMarker = L.marker([lat, lng]).addTo(map);
+        currentMarker.bindPopup('📍 Tanlangan joy').openPopup();
+        
+        // Natijani ko'rsatish
+        document.getElementById('mapResult').style.display = 'block';
+        document.getElementById('coordDisplay').innerHTML = `Lat: ${lat.toFixed(6)}<br>Lng: ${lng.toFixed(6)}`;
+    });
+    
+    // Bazadagi barcha e'lonlarni yuklash
+    loadItemsToMap();
+}
+
+// Manzildan koordinata olish
+async function geocodeAddress(address) {
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`;
+    
+    try {
+        const response = await fetch(url, {
+            headers: { 'User-Agent': 'LostFoundApp/1.0' }
         });
-
-        // Backenddan e’lonlarni olish
-        fetch("/items-map/")
-            .then(res => res.json())
-            .then(items => {
-                items.forEach(item => {
-                    const marker = new google.maps.Marker({
-                        position: { lat: item.latitude, lng: item.longitude },
-                        map: map,
-                        title: item.name,
-                        icon: item.item_type === "lost"
-                            ? "http://maps.google.com/mapfiles/ms/icons/red-dot.png"
-                            : "http://maps.google.com/mapfiles/ms/icons/green-dot.png"
-                    });
-
-                    const infoWindow = new google.maps.InfoWindow({
-                        content: `<b>${item.name}</b><br>${item.category} · ${item.location}<br>Status: ${item.status}`
-                    });
-
-                    marker.addListener("click", () => {
-                        infoWindow.open(map, marker);
-                    });
-                });
-            });
+        const data = await response.json();
+        
+        if (data && data.length > 0) {
+            return {
+                lat: parseFloat(data[0].lat),
+                lon: parseFloat(data[0].lon),
+                displayName: data[0].display_name
+            };
+        }
+        return null;
+    } catch (error) {
+        console.error('Geocoding xatosi:', error);
+        return null;
     }
+}
 
-    // Google Maps API chaqirish
-    window.initMap = initMap;
+// Qidiruv tugmasi
+document.getElementById('searchOnMapBtn').addEventListener('click', async () => {
+    const district = document.getElementById('districtSelect').value;
+    const address = document.getElementById('addressInput').value;
+    
+    if (!address) {
+        alert('Iltimos, manzil yozing!');
+        return;
+    }
+    
+    // To'liq manzil yaratish
+    let fullAddress = address;
+    if (district) {
+        fullAddress += `, ${district} tumani`;
+    }
+    fullAddress += `, Toshkent, O'zbekiston`;
+    
+    // Yuklash holati
+    const btn = document.getElementById('searchOnMapBtn');
+    const originalText = btn.textContent;
+    btn.textContent = "⏳ Qidirilmoqda...";
+    btn.disabled = true;
+    
+    const result = await geocodeAddress(fullAddress);
+    
+    if (result) {
+        // Markerni yangilash
+        if (currentMarker) {
+            map.removeLayer(currentMarker);
+        }
+        currentMarker = L.marker([result.lat, result.lon]).addTo(map);
+        currentMarker.bindPopup(`<b>${fullAddress}</b>`).openPopup();
+        map.setView([result.lat, result.lon], 15);
+        
+        // Natijani ko'rsatish
+        document.getElementById('mapResult').style.display = 'block';
+        document.getElementById('coordDisplay').innerHTML = `
+            <strong>${district ? district + ' tumani' : ''}</strong><br>
+            ${address}<br>
+            <span style="font-size:11px; color:#666;">${result.lat.toFixed(6)}°, ${result.lon.toFixed(6)}°</span>
+        `;
+    } else {
+        alert('Manzil topilmadi! Iltimos, aniqroq yozing.\nMasalan: "Ahmad Donish 12, Yunusobod"');
+    }
+    
+    btn.textContent = originalText;
+    btn.disabled = false;
 });
+
+// Bazadagi e'lonlarni xaritada ko'rsatish
+async function loadItemsToMap() {
+    try {
+        const response = await fetch('/api/items/');  // API endpointingiz
+        const items = await response.json();
+        allItems = items;
+        
+        items.forEach(item => {
+            if (item.latitude && item.longitude) {
+                const marker = L.marker([item.latitude, item.longitude]).addTo(map);
+                const badge = item.item_type === 'lost' ? 'Yo\'qolgan' : 'Topilgan';
+                const badgeClass = item.item_type === 'lost' ? 'bl' : 'bf';
+                
+                marker.bindPopup(`
+                    <div style="min-width:200px;">
+                        <strong>${item.name}</strong><br>
+                        <span class="badge ${badgeClass}" style="font-size:11px;">${badge}</span><br>
+                        <small>📍 ${item.location || 'Manzil: ' + item.latitude + ', ' + item.longitude}</small><br>
+                        <a href="/item/${item.id}" style="color:#0066cc;">Batafsil →</a>
+                    </div>
+                `);
+            }
+        });
+        
+        // O'ng panelga e'lonlar ro'yxati
+        updateMapList(items);
+        
+    } catch (error) {
+        console.error('E\'lonlarni yuklashda xatolik:', error);
+    }
+}
+
+// O'ng panelga e'lonlar ro'yxatini chiqarish
+function updateMapList(items) {
+    const mapList = document.getElementById('map-list');
+    if (!mapList) return;
+    
+    if (items.length === 0) {
+        mapList.innerHTML = '<p style="text-align:center; color:#999;">Hech qanday e\'lon yo\'q</p>';
+        return;
+    }
+    
+    mapList.innerHTML = items.map(item => `
+        <div class="map-item" onclick="location.href='/item/${item.id}'" style="cursor:pointer;">
+            <div class="map-item-t">${item.name}</div>
+            <div class="map-item-m">
+                <span class="badge ${item.item_type === 'lost' ? 'bl' : 'bf'}">${item.item_type === 'lost' ? 'Yo\'qolgan' : 'Topilgan'}</span>
+                <span>📍 ${item.location || 'Koordinatada'}</span>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Sahifa yuklanganda xaritani ishga tushirish
+document.addEventListener('DOMContentLoaded', () => {
+    initMap();
+});
+
+
 
 
 // Profil modal elementlari
@@ -552,7 +681,7 @@ async function loadUserProfile() {
         
         // E'lonlarni yopish tugmalariga event listener qo'shish
         document.querySelectorAll('.close-item-btn').forEach(btn => {
-            btn.onclick = () => closeUserItem(btn.dataset.id, btn.dataset.name);
+            btn.onclick = () => requestCloseItem(btn.dataset.id, btn.dataset.name);
         });
         
     } catch (error) {
@@ -583,23 +712,31 @@ function generateProfileHTML(data) {
         const texts = {
             'active': 'Aktiv',
             'found': 'Topilgan',
-            'success': 'Muvaffaqiyatli',
+            'success': '✅ Yopilgan',
             'reported': 'Report qilingan'
         };
         return texts[status] || status;
+    };
+    
+    // Location ni formatlash (agar address va district mavjud bo'lsa)
+    const formatLocation = (item) => {
+        let location = [];
+        if (item.district) location.push(item.district);
+        if (item.address) location.push(item.address);
+        return location.length > 0 ? location.join(', ') : 'Manzil kiritilmagan';
     };
     
     // E'lonlar ro'yxati
     const itemsHTML = data.items.map(item => `
         <div class="user-item-card">
             <div class="user-item-img">
-                ${item.image ? `<img src="${item.image}" alt="${item.name}">` : (item.item_type === 'lost' ? '🔴' : '🟢')}
+                ${item.image ? `<img src="${item.image}" alt="${item.name}">` : (item.item_type === 'lost' ? '🔴 Yo\'qolgan' : '🟢 Topilgan')}
             </div>
             <div class="user-item-info">
                 <div class="user-item-name">${escapeHtml(item.name)}</div>
                 <div class="user-item-meta">
                     <span>${item.item_type_display}</span>
-                    <span>📍 ${escapeHtml(item.location)}</span>
+                    <span>📍 ${escapeHtml(formatLocation(item))}</span>
                     <span>📅 ${item.date}</span>
                 </div>
                 <div>
@@ -616,6 +753,9 @@ function generateProfileHTML(data) {
         </div>
     `).join('');
     
+    const activeCount = data.items.filter(i => i.status === 'active').length;
+    const closedCount = data.items.filter(i => i.status !== 'active').length;
+    
     return `
         <div class="profile-header">
             <div class="profile-avatar">${data.username.charAt(0).toUpperCase()}</div>
@@ -628,11 +768,11 @@ function generateProfileHTML(data) {
                 <div class="stat-label">E'lonlar</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number">${data.items.filter(i => i.status === 'active').length}</div>
+                <div class="stat-number">${activeCount}</div>
                 <div class="stat-label">Aktiv</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number">${data.items.filter(i => i.status !== 'active').length}</div>
+                <div class="stat-number">${closedCount}</div>
                 <div class="stat-label">Yopilgan</div>
             </div>
         </div>
@@ -660,12 +800,15 @@ function escapeHtml(text) {
     div.textContent = text;
     return div.innerHTML;
 }
-// E'lonni yopish
-async function closeUserItem(itemId, itemName) {
-    if (!confirm(`"${itemName}" e'lonini yopishni tasdiqlaysizmi?`)) return;
+
+// E'lonni yopishni so'rash (foydalanuvchi so'rovi)
+async function requestCloseItem(itemId, itemName) {
+    if (!confirm(`"${itemName}" e'lonini yopishni so'raysizmi?\n\nAdmin so'rovingizni ko'rib chiqib, e'lonni yopadi.`)) {
+        return;
+    }
     
     try {
-        const response = await fetch(`/item/${itemId}/close/`, {
+        const response = await fetch(`/item/${itemId}/close-request/`, {
             method: 'POST',
             headers: {
                 'X-CSRFToken': getCsrfToken(),
@@ -673,33 +816,28 @@ async function closeUserItem(itemId, itemName) {
             }
         });
         
+        // Agar redirect bo'lsa (JSON emas)
+        if (response.redirected) {
+            window.location.href = response.url;
+            return;
+        }
+        
         const data = await response.json();
         
         if (data.success) {
             showToast(data.message, 'success');
             await loadUserProfile(); // Profilni qayta yuklash
         } else {
-            showToast(data.message, 'error');
+            showToast(data.message || 'Xatolik yuz berdi', 'error');
         }
+        
     } catch (error) {
-        showToast('Xatolik yuz berdi', 'error');
+        console.error('Close request error:', error);
+        showToast('Xatolik yuz berdi. Qayta urinib ko\'ring.', 'error');
     }
 }
 
-// Profil modalni yopish
-async function openProfileModal() {
-    let modal = document.getElementById('profileModal');
-    
-    if (!modal) {
-        createProfileModal();
-        modal = document.getElementById('profileModal');
-    }
-    
-    modal.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-    await loadUserProfile();
-}
-
+// Profil modalni yopish (openProfileModal qayta yozilgan)
 function closeProfileModal() {
     const modal = document.getElementById('profileModal');
     if (modal) {
@@ -707,9 +845,80 @@ function closeProfileModal() {
         document.body.style.overflow = '';
     }
 }
+
 // Escape tugmasi bilan yopish
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape' && profileModal && profileModal.style.display === 'flex') {
         closeProfileModal();
     }
 });
+
+// CSRF token olish funksiyasi
+function getCsrfToken() {
+    const cookieValue = document.cookie.match('(^|;)\\s*csrftoken\\s*=\\s*([^;]+)');
+    return cookieValue ? cookieValue.pop() : '';
+}
+
+// Toast xabarlar uchun (agar mavjud bo'lmasa)
+function showToast(message, type = 'success') {
+    // Toast container yaratish (agar mavjud bo'lmasa)
+    let toastContainer = document.querySelector('.toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container';
+        toastContainer.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 9999;
+        `;
+        document.body.appendChild(toastContainer);
+    }
+    
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.style.cssText = `
+        background: ${type === 'success' ? '#4CAF50' : '#F44336'};
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        animation: slideIn 0.3s ease;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    `;
+    toast.textContent = message;
+    
+    toastContainer.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// CSS animatsiyalar qo'shish (agar mavjud bo'lmasa)
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+`;
+document.head.appendChild(style);

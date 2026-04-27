@@ -147,15 +147,20 @@
       </div>
 
       <div class="form-group">
-        <label>Shahar / Tuman</label>
+        <label>Viloyat</label>
         {{ form.city }}
       </div>
 
       <div class="form-group">
-        <label>Manzil</label>
-        {{ form.location }}
+        <label>Tuman</label>
+        <input type="text" name="district" id="districtInput" class="form-control" placeholder="Masalan: Yunusobod, Chilonzor...">
       </div>
 
+      <div class="form-group">
+        <label>Manzil</label>
+        <input type="text" name="address" id="addressInput" class="form-control" placeholder="Ko'cha va uy raqami (Masalan: Ahmad Donish 12)">
+      </div>
+      
       <div class="form-group">
         <label>Tavsif</label>
         <textarea name="description" placeholder="Buyumning rangi, belgisi, ichidagi narsalar..."></textarea>

@@ -1,16 +1,43 @@
-# main/utils.py
 import requests
 from django.conf import settings
-
 from main.models import Notification
+import time
+from django.core.cache import cache
+
 
 def get_coordinates(address):
-    url = f"https://maps.googleapis.com/maps/api/geocode/json?address={address}&key={settings.GOOGLE_MAPS_API_KEY}"
-    response = requests.get(url)
-    data = response.json()
-    if data['status'] == 'OK':
-        loc = data['results'][0]['geometry']['location']
-        return loc['lat'], loc['lng']
+    """
+    Nominatim (OSM) orqali manzildan koordinata olish
+    """
+    # Cache tekshirish (takroriy so'rovlarni oldini olish)
+    cache_key = f"geocode_{address}"
+    cached = cache.get(cache_key)
+    if cached:
+        return cached
+    
+    # So'rovlar orasida 1 sekund kutish (Nominatim qoidalari)
+    time.sleep(1)
+    
+    url = "https://nominatim.openstreetmap.org/search"
+    params = {
+        'q': f"{address}, Toshkent, O'zbekiston",
+        'format': 'json',
+        'limit': 1
+    }
+    
+    try:
+        response = requests.get(url, params=params, headers={'User-Agent': 'YourAppName/1.0'})
+        data = response.json()
+        
+        if data and len(data) > 0:
+            lat = float(data[0]['lat'])
+            lon = float(data[0]['lon'])
+            result = (lat, lon)
+            cache.set(cache_key, result, timeout=86400)  # 24 soat cache
+            return result
+    except Exception as e:
+        print(f"Geocoding xatosi: {e}")
+    
     return None, None
 
 

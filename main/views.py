@@ -8,20 +8,21 @@ from django.contrib import messages
 from django.db.models import Count
 from django.views.generic import DetailView
 from django.db.models import Q
-from collections import defaultdict
 from django.views.generic import ListView
 from django.views import View
-from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
 from django.contrib.admin.models import LogEntry, CHANGE
 from django.contrib.contenttypes.models import ContentType
 from django.utils.html import strip_tags
 from .models import Item, Report, Notification
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.utils import timezone
+
 
 from django.contrib.admin.views.decorators import staff_member_required
 
-
-import requests
 from .utils import get_coordinates
 
 
@@ -80,7 +81,7 @@ def chat_ai(request):
 
             # Bazadan oxirgi 10 ta e'lonni olish
             items = Item.objects.order_by("-id")[:10]
-            items_text = "\n".join([f"{i.category} - {i.location}: {i.description}" for i in items])
+            items_text = "\n".join([f"{i.category} - {i.address}: {i.description}" for i in items])
 
             # Chat prompt
             chat_prompt = f"""
@@ -142,7 +143,7 @@ def chat_ai(request):
                     Item.objects.create(
                         description=description_text,
                         category=category,
-                        location=location
+                        address=location
                     )
                 except Exception:
                     pass  # Kategoriya aniqlash muvaffaqiyatsiz
@@ -162,7 +163,7 @@ def items_map(request):
             "id": i.id,
             "name": i.name,
             "category": i.category.name if i.category else "",
-            "location": i.location.name if i.location else "",
+            "location": i.city.name if i.city else "",
             "latitude": i.latitude,
             "longitude": i.longitude,
             "status": i.get_status_display(),
@@ -174,9 +175,9 @@ def items_map(request):
 
 
 def save(self, *args, **kwargs):
-    if (not self.latitude or not self.longitude) and self.location:
+    if (not self.latitude or not self.longitude) and self.city:
         from .utils import get_coordinates
-        lat, lng = get_coordinates(self.location.name)
+        lat, lng = get_coordinates(self.city.name)
         if lat and lng:
             self.latitude = lat
             self.longitude = lng
@@ -199,7 +200,7 @@ def chat_history(request):
 def stats_view(request):
     total_items = Item.objects.count()
     by_category = Item.objects.values("category").annotate(count=Count("id")).order_by("-count")
-    by_location = Item.objects.values("location").annotate(count=Count("id")).order_by("-count")
+    by_location = Item.objects.values("city").annotate(count=Count("id")).order_by("-count")
 
     data = {
         "total_items": total_items,
@@ -208,42 +209,56 @@ def stats_view(request):
     }
     return JsonResponse(data)
 
-
 def home_view(request):
     query = request.GET.get('q')
     filter_type = request.GET.get('type')
     filter_category = request.GET.get('category')
 
+    # Asosiy queryset
     items = Item.objects.all().order_by('-date')
-    last_item = Item.objects.order_by('-date')[:3]
 
-     # type bo‘yicha filter
+    # Oxirgi 8 ta e'lon
+    last_items = Item.objects.order_by('-date')[:8]
+
+    # Oxirgi 3 ta e'lon
+    last_three_items = Item.objects.order_by('-date')[:3]
+
+    # Qidiruv
     if query:
         items = items.filter(name__icontains=query)
 
+    # Type filter
     if filter_type and filter_type != 'all':
         items = items.filter(item_type=filter_type)
 
+    # Category filter
     if filter_category:
         items = items.filter(category__name=filter_category)
 
-    # ✅ statistika
-    total_items = Item.objects.count()
-    found_items = Item.objects.filter(status="found").count()
+    # Statistikalar
+    total_active = Item.objects.filter(status='active').count()
+    total_found = Item.objects.filter(status='found').count()
+    total_success = Item.objects.filter(status='success').count()
+
+    total_items = total_active + total_found + total_success
+
     success_rate = 0
     if total_items > 0:
-        success_rate = round((found_items / total_items) * 100)
+        success_rate = round((total_success / total_items) * 100)
 
     return render(request, 'index.html', {
-        'last_item': last_item,
-        'items': items,
+        'items': items[:8],              # faqat oxirgi 8 ta e'lon
+        'last_items': last_items,        # alohida oxirgi 8 ta
+        'last_three_items': last_three_items,
         'search_query': query,
         'active_type': filter_type,
         'active_category': filter_category,
-        'total_items': total_items,
-        'found_items': found_items,
+        'total_active': total_active,
+        'total_found': total_found,
+        'total_success': total_success,
         'success_rate': success_rate,
     })
+
 
 class ItemListView(ListView):
     model = Item
@@ -291,8 +306,6 @@ class ItemListView(ListView):
         context['total_returned'] = Item.objects.filter(status='success').count()
 
         return context
-
-
 
 class CreateItemView(LoginRequiredMixin, CreateView):
     model = Item
@@ -343,22 +356,9 @@ class ItemDetailView(DetailView):
         return context
 
 
-def items_map(request):
-    items = Item.objects.filter(is_active=True)
-    
-    items_data = []
-    for i in items:
-        items_data.append({
-            "id": i.id,
-            "name": i.name,
-            "item_type": i.item_type,
-            "location": i.location if i.location else "",  # Tuzatildi
-            "latitude": i.latitude,
-            "longitude": i.longitude,
-        })
-    
-    return JsonResponse(items_data, safe=False)
-
+def items_api(request):
+    items = Item.objects.filter(is_active=True).values('id', 'name', 'address', 'city', 'latitude', 'longitude', 'item_type')
+    return JsonResponse(list(items), safe=False)
 
 class AddCommentView(CreateView):
     model = Comment
@@ -426,9 +426,7 @@ class ReportItemView(LoginRequiredMixin, View):
             Notification.objects.create(
                 title=f"📢 Yangi shikoyat: {item.name}",
                 message=f"""
-═══════════════════════════════════
 📋 Shikoyat ma'lumotlari:
-═══════════════════════════════════
 👤 Kim yuborgan: {request.user.username} ({request.user.email})
 📦 E'lon: {item.name}
 👨‍💼 E'lon egasi: {item.user.username}
@@ -436,7 +434,6 @@ class ReportItemView(LoginRequiredMixin, View):
 📝 Tavsif: {description if description else 'Yo\'q'}
 🔗 E'lon ID: {item.pk}
 🕐 Vaqt: {timezone.now().strftime('%d.%m.%Y %H:%M:%S')}
-═══════════════════════════════════
                 """,
                 notification_type='report_received',
                 item=item,
@@ -462,8 +459,8 @@ def user_profile(request):
     for item in items:
         # JOYLASHUVNI TO'G'RI OLISH
         location_text = ""
-        if item.location:
-            location_text = item.location
+        if item.address:
+            location_text = item.address
         elif item.city:
             location_text = str(item.city)
         else:
@@ -495,28 +492,22 @@ def user_profile(request):
 
 
 @login_required
-def close_item(request, pk):
+def request_close_item(request, pk):
+    """Foydalanuvchi o'z e'lonini yopishni so'rash"""
     item = get_object_or_404(Item, pk=pk, user=request.user)
     
     if item.status == 'active':
-        item.status = 'closed'
-        item.is_active = False
-        item.save()
-        
-        # ✅ ADMINGA XABAR
+        # Admin uchun notification yaratish
         try:
             Notification.objects.create(
-                title=f"🔒 E'lon yopildi: {item.name}",
+                title=f"🔒 E'lonni yopish so'rovi",
                 message=f"""
-═══════════════════════════════════
-📋 E'lon yopildi:
-═══════════════════════════════════
+📋 E'lon yopish so'rovi:
 👤 Foydalanuvchi: {request.user.username} ({request.user.email})
 📦 E'lon: {item.name}
 🔗 E'lon ID: {item.pk}
 📅 Sana: {item.date}
-🕐 Yopilgan vaqt: {timezone.now().strftime('%d.%m.%Y %H:%M:%S')}
-═══════════════════════════════════
+🕐 So'rov vaqti: {timezone.now().strftime('%d.%m.%Y %H:%M:%S')}
                 """,
                 notification_type='item_closed',
                 item=item,
@@ -524,27 +515,56 @@ def close_item(request, pk):
                 is_for_admin=True,
                 is_read=False
             )
+            messages.success(request, f"E'lonni yopish so'rovingiz adminga yuborildi!")
         except Exception as e:
-            print(f"Notification error: {e}")
-        
-        return JsonResponse({
-            'success': True,
-            'message': f'E\'lon "{item.name}" yopildi. Admin ko\'rib chiqadi.'
-        })
+            messages.error(request, f"Xatolik: {e}")
+    else:
+        messages.warning(request, "Bu e'lon allaqachon yopilgan!")
     
-    return JsonResponse({'success': False, 'message': 'Xatolik'}, status=400)
+    return redirect('profile')
 
 
-@staff_member_required
-def admin_close_item(request, pk):
-    """Admin tomonidan e'lon statusini o'zgartirish"""
+@user_passes_test(lambda u: u.is_staff)
+def admin_approve_close_item(request, pk):
+    """Admin tomonidan e'lonni yopishni tasdiqlash"""
     item = get_object_or_404(Item, pk=pk)
-    new_status = request.POST.get('status', 'success')
     
-    if new_status in dict(Item.STATUS_CHOICES):
-        item.status = new_status
-        item.is_active = (new_status == 'active')
-        item.save()
-        return JsonResponse({'success': True, 'message': f'E\'lon statusi "{item.get_status_display()}" ga o\'zgartirildi'})
+    if request.method == 'POST':
+        new_status = request.POST.get('status', 'success')
+        
+        if new_status in dict(Item.STATUS_CHOICES):
+            # Eski statusni eslab qolish
+            old_status = item.status
+            
+            # E'lon statusini o'zgartirish
+            item.status = new_status
+            item.is_active = (new_status == 'active')
+            item.save()
+            
+            # Foydalanuvchiga xabar yuborish
+            if new_status == 'success':
+                Notification.objects.create(
+                    title="✅ E'lon tasdiqlandi",
+                    message=f"""
+📋 Hurmatli {item.user.username},
+Sizning "{item.name}" e'loningiz administrator tomonidan tasdiqlandi va yopildi.
+
+📅 Yopilgan sana: {timezone.now().strftime('%d.%m.%Y %H:%M:%S')}
+                    """,
+                    notification_type='item_success',
+                    item=item,
+                    user=item.user,
+                    is_for_admin=False,
+                    is_read=False
+                )
+            
+            # Notificationni o'qilgan deb belgilash
+            Notification.objects.filter(item=item, notification_type='item_closed').update(is_read=True)
+            
+            messages.success(request, f"E'lon statusi '{item.get_status_display()}' ga o'zgartirildi!")
+        else:
+            messages.error(request, "Noto'g'ri status!")
+        
+        return redirect('admin:main_notification_changelist')
     
-    return JsonResponse({'success': False, 'message': 'Noto\'g\'ri status'}, status=400)
+    return JsonResponse({'success': False, 'message': 'Noto\'g\'ri so\'rov'}, status=400)
