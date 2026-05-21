@@ -1,0 +1,273 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Topildi.uz — Biz haqimizda</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{% static 'styles/about.css' %}" />
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a class="nav-logo" href="#">
+      <div class="nav-logo-icon">🔍</div>
+      <span class="nav-logo-text">Topildi<span>.uz</span></span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#">Qidiruv</a></li>
+      <li><a href="#">E'lonlar</a></li>
+      <li><a href="#">Xarita</a></li>
+      <li><a href="#">Jarayonlar</a></li>
+      <li><a href="#" class="active">Biz haqimizda</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="#" class="nav-user">👤 Azizbek</a>
+      <button class="btn-outline">Chiqish</button>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-glow"></div>
+    <div class="hero-glow-2"></div>
+    <div class="hero-inner">
+      <div class="hero-badge">O'zbekistonda №1 platforma</div>
+      <h1>Yo'qolganlarni<br><em>qaytaramiz.</em></h1>
+      <p class="hero-desc">Topildi.uz — yo'qolgan narsalarni topib, ularni egasiga qaytarishga yordam beruvchi O'zbekistonning yagona raqamli platformasi.</p>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <span class="hero-stat-num">2 100+</span>
+          <span class="hero-stat-label">Jami e'lonlar</span>
+        </div>
+        <div class="hero-stat">
+          <span class="hero-stat-num">340+</span>
+          <span class="hero-stat-label">Muvaffaqiyatli topilgan</span>
+        </div>
+        <div class="hero-stat">
+          <span class="hero-stat-num">16%</span>
+          <span class="hero-stat-label">Muvaffaqiyat darajasi</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="line-sep"></div>
+
+  <!-- MISSION -->
+  <section>
+    <div class="mission reveal">
+      <div>
+        <div class="section-label">// Bizning missiya</div>
+        <h2 class="section-title">Har bir yo'qolgan<br>narsa <em>izini</em> qoldiradi.</h2>
+        <p class="section-body">
+          Biz 2023-yilda oddiy bir savoldan yo'l oldik: "Nima uchun yo'qolgan narsalarni topish bu qadar qiyin?" O'zbekistonda har kuni yuzlab narsalar yo'qoladi — hujjatlar, telefonlar, qimmatbaho buyumlar. Topildi.uz shu muammoni hal qilish uchun tug'ildi.
+        </p>
+        <br>
+        <p class="section-body" style="color: var(--text-dim);">
+          Platformamiz nafaqat yo'qolgan narsalarni e'lon qilish, balki jamiyat kuchidan foydalanib ularni egasiga qaytarishga xizmat qiladi.
+        </p>
+        <br><br>
+        <span class="float-label">✓ 2023-yildan faoliyat ko'rsatmoqda</span>
+      </div>
+      <div class="mission-visual">
+        <div class="mission-card-stack">
+          <div class="m-card">
+            <div class="m-card-tag tag-found">✓ Topilgan</div>
+            <div class="m-card-title">Uzcard, raqami: 8600 **** **** 1234</div>
+            <div class="m-card-meta">📍 Toshkent · 2 soat oldin</div>
+          </div>
+          <div class="m-card">
+            <div class="m-card-tag tag-lost">✗ Yo'qolgan</div>
+            <div class="m-card-title">Qora Ray-Ban ko'zoynagi, qutisi bilan</div>
+            <div class="m-card-meta">📍 Chilonzor · 1 kun oldin</div>
+          </div>
+          <div class="m-card">
+            <div class="m-card-tag tag-returned">★ Qaytarildi</div>
+            <div class="m-card-title">Oq simli quloqchin, AirPods Pro</div>
+            <div class="m-card-meta">📍 Yunusobod · 3 kun oldin</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="line-sep"></div>
+
+  <!-- HOW IT WORKS -->
+  <section style="padding: 80px 60px;">
+    <div class="how-it-works reveal">
+      <div class="how-inner">
+        <div style="text-align:center;">
+          <div class="section-label">// Qanday ishlaydi</div>
+          <h2 class="section-title">Uch qadam — <em>bir natija.</em></h2>
+        </div>
+        <div class="steps-grid">
+          <div class="step">
+            <div class="step-num">01</div>
+            <span class="step-icon">📝</span>
+            <div class="step-title">E'lon qo'shing</div>
+            <div class="step-desc">Yo'qolgan yoki topgan buyumingiz haqida to'liq ma'lumot bilan e'lon joylang. Rasm, joylashuv va tavsif qo'shing.</div>
+          </div>
+          <div class="step">
+            <div class="step-num">02</div>
+            <span class="step-icon">🔍</span>
+            <div class="step-title">Platforma izlaydi</div>
+            <div class="step-desc">Tizimimiz avtomatik ravishda mos e'lonlarni solishtiradi va potentsial mos keluvchilarni topadi.</div>
+          </div>
+          <div class="step">
+            <div class="step-num">03</div>
+            <span class="step-icon">🤝</span>
+            <div class="step-title">Egasiga qaytadi</div>
+            <div class="step-desc">Xavfsiz chat orqali muloqot qiling va buyumni egasiga yetkazing. Jamiyat kuchi bilan!</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VALUES -->
+  <section class="reveal">
+    <div class="section-label">// Qadriyatlarimiz</div>
+    <h2 class="section-title">Biz nimaga <em>ishonamiz</em>?</h2>
+    <div class="values-grid" style="margin-top: 52px;">
+      <div class="value-card">
+        <div class="value-icon">🔒</div>
+        <div class="value-title">Xavfsizlik birinchi</div>
+        <div class="value-desc">Har bir e'lon va muloqot xavfsizlik filtrlari orqali o'tadi. Shaxsiy ma'lumotlar himoyalangan holda saqlanadi.</div>
+      </div>
+      <div class="value-card">
+        <div class="value-icon">🤲</div>
+        <div class="value-title">Jamiyat kuchi</div>
+        <div class="value-desc">Topildi.uz faqat texnologiya emas — bu odamlarni bir-biriga bog'laydigan ijtimoiy harakat. Har bir foydalanuvchi katta tizimning bir qismi.</div>
+      </div>
+      <div class="value-card">
+        <div class="value-icon">⚡</div>
+        <div class="value-title">Tezkor natija</div>
+        <div class="value-desc">Vaqt o'tgan sari topish imkoni kamayadi. Shuning uchun tizimimiz real vaqtda bildirish va tezkor tahlil xizmatini taklif etadi.</div>
+      </div>
+      <div class="value-card">
+        <div class="value-icon">🌐</div>
+        <div class="value-title">Shaffoflik</div>
+        <div class="value-desc">Barcha statistika va muvaffaqiyat ko'rsatkichlari ochiq. Biz natijalarga asoslanib ishlashga va foydalanuvchilarga hisobot berishga ishonamiz.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- IMPACT -->
+  <div class="impact reveal">
+    <div class="impact-inner">
+      <div class="section-label">// Ta'sirimiz</div>
+      <h2 class="section-title">Raqamlar <em>gapiradi.</em></h2>
+      <div class="impact-grid">
+        <div class="impact-stats">
+          <div class="impact-stat-card">
+            <span class="impact-stat-num">2 100</span>
+            <span class="impact-stat-label">Jami e'lonlar</span>
+          </div>
+          <div class="impact-stat-card">
+            <span class="impact-stat-num">340</span>
+            <span class="impact-stat-label">Buyumlar qaytarildi</span>
+          </div>
+          <div class="impact-stat-card">
+            <span class="impact-stat-num">14</span>
+            <span class="impact-stat-label">Viloyatlarda ishlaydi</span>
+          </div>
+          <div class="impact-stat-card">
+            <span class="impact-stat-num">4.8★</span>
+            <span class="impact-stat-label">O'rtacha reyting</span>
+          </div>
+        </div>
+        <div class="impact-testimonials">
+          <div class="testimonial">
+            <div class="testimonial-text">"Pasportimni yo'qotib qo'ygan edim, Topildi.uz orqali 2 kunda topib qaytarishdi. Hech qachon bu qadar tez va qulay bo'lishini o'ylamagan edim."</div>
+            <div class="testimonial-author">Dilnoza X.</div>
+            <div class="testimonial-city">Toshkent, Yunusobod</div>
+          </div>
+          <div class="testimonial">
+            <div class="testimonial-text">"Topgan narsamni egasiga qaytarishning bu qadar oson yo'li borligini bilmagan edim. Platforma hamma narsani osonlashtirdi."</div>
+            <div class="testimonial-author">Jasur M.</div>
+            <div class="testimonial-city">Samarqand shahri</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TEAM -->
+  <section class="reveal">
+    <div class="section-label">// Jamoamiz</div>
+    <h2 class="section-title">Ortimizda <em>odamlar</em> bor.</h2>
+    <p class="section-body">Topildi.uz jamoa a'zolari texnologiya, dizayn va ijtimoiy mas'uliyatga ihtiyos bo'lgan mutaxassislardan iborat.</p>
+    <div class="team-grid">
+      <div class="team-card">
+        <div class="team-avatar">
+          <div class="avatar-ring"></div>
+          <span>👨‍💻</span>
+        </div>
+        <div class="team-name">Azizbek Toshmatov</div>
+        <div class="team-role">Bosh direktor & Asoschisi</div>
+        <div class="team-bio">O'zbekistonda raqamli ijtimoiy platformalar sohasidagi 8 yillik tajribaga ega. Topildi.uz g'oyasini 2023-yilda amalga oshirdi.</div>
+      </div>
+      <div class="team-card">
+        <div class="team-avatar">
+          <div class="avatar-ring"></div>
+          <span>👩‍🎨</span>
+        </div>
+        <div class="team-name">Nodira Yusupova</div>
+        <div class="team-role">Dizayn va UX boshlig'i</div>
+        <div class="team-bio">Foydalanuvchi tajribasini qulay va intuitiv qilish uchun mas'ul. Toshkent va Dubai'da dizayn sohasida ishlagan.</div>
+      </div>
+      <div class="team-card">
+        <div class="team-avatar">
+          <div class="avatar-ring"></div>
+          <span>👨‍🔬</span>
+        </div>
+        <div class="team-name">Sherzod Karimov</div>
+        <div class="team-role">Texnologiya direktori</div>
+        <div class="team-bio">Platforma arxitekturasi va AI-asosidagi qidiruv algoritmlarini yaratgan. Machine Learning bo'yicha mutaxassis.</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="line-sep"></div>
+
+  <!-- PARTNERS -->
+  <section class="reveal">
+    <div class="section-label">// Hamkorlarimiz</div>
+    <h2 class="section-title">Biz <em>birga</em> kuchli.</h2>
+    <p class="section-body">Davlat tuzilmalari va xususiy sektor bilan hamkorlikda O'zbekiston bo'ylab xizmatimizni kengaytirib bormoqdamiz.</p>
+    <div class="partners-row">
+      <div class="partner-badge">🏛️ Ichki ishlar vazirligi</div>
+      <div class="partner-badge">🚇 Toshkent Metro</div>
+      <div class="partner-badge">✈️ Uzbekistan Airways</div>
+      <div class="partner-badge">🏦 Kapitalbank</div>
+      <div class="partner-badge">📦 Express24</div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <div class="cta-section reveal">
+    <h2>Hali kech <em>emas.</em></h2>
+    <p class="cta-desc">Yo'qolgan narsangizni e'lon qiling yoki topgan narsani egasiga qaytaring — bu faqat bir daqiqa.</p>
+    <div class="cta-buttons">
+      <button class="btn-primary">E'lon qo'shish →</button>
+      <button class="btn-secondary">Barcha e'lonlar</button>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-copy">© 2024 Topildi.uz — O'zbekistonda №1 yo'qolganlar platformasi</div>
+    <ul class="footer-links">
+      <li><a href="#">Shartlar</a></li>
+      <li><a href="#">Maxfiylik</a></li>
+      <li><a href="#">Aloqa</a></li>
+      <li><a href="#">Yordam</a></li>
+    </ul>
+  </footer>
+  <script src="{% static 'js/about.js' %}"></script>
+</body>
+</html>

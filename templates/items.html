@@ -18,8 +18,7 @@
         <span class="logo-name">Topildi<b>.uz</b></span>
     </a>
     <a href="{% url 'home' %}">Bosh sahifa</a>
-    <a href="#map">Xarita</a>
-    <a href="#process">Jarayonlar</a>
+    <a href="#map">Biz haqimizda</a>
   </div>
 
   <div class="navbar-right">
@@ -78,16 +77,22 @@
            placeholder="Buyum nomi bo'yicha qidiring...">
     <button type="submit" class="btn-primary">Qidirish</button>
   </form>
-  <div class="filter-row">
+ <div class="filter-row">
     <a href="?type=all" class="chip {% if active_type == 'all' or not active_type %}active{% endif %}">Hammasi</a>
     <a href="?type=lost" class="chip {% if active_type == 'lost' %}active{% endif %}">🔴 Yo'qolgan</a>
     <a href="?type=found" class="chip {% if active_type == 'found' %}active{% endif %}">🟢 Topilgan</a>
-    <a href="?category=Hujjat" class="chip {% if active_category == 'Hujjat' %}active{% endif %}">📄 Hujjat</a>
-    <a href="?category=Telefon" class="chip {% if active_category == 'Telefon' %}active{% endif %}">📱 Telefon</a>
-    <a href="?category=Hamyon" class="chip {% if active_category == 'Hamyon' %}active{% endif %}">👜 Hamyon</a>
-    <a href="?category=Kalit" class="chip {% if active_category == 'Kalit' %}active{% endif %}">🔑 Kalit</a>
-    <a href="?category=Sumka" class="chip {% if active_category == 'Sumka' %}active{% endif %}">🎒 Sumka</a>
-  </div>
+    <a href="?category=Boshqa" class="chip {% if active_category == 'Boshqa' %}active{% endif %}">📦 Boshqa</a>
+    <a href="?category=Kitob va daftarlаr" class="chip {% if active_category == 'Kitob va daftarlаr' %}active{% endif %}">📚 Kitob va daftarlаr</a>
+    <a href="?category=Uy hayvonlari" class="chip {% if active_category == 'Uy hayvonlari' %}active{% endif %}">🐾 Uy hayvonlari</a>
+    <a href="?category=Kompyuter va elektronika" class="chip {% if active_category == 'Kompyuter va elektronika' %}active{% endif %}">💻 Kompyuter va elektronika</a>
+    <a href="?category=Kalitlar" class="chip {% if active_category == 'Kalitlar' %}active{% endif %}">🔑 Kalitlar</a>
+    <a href="?category=Soat va zargarlik" class="chip {% if active_category == 'Soat va zargarlik' %}active{% endif %}">⌚ Soat va zargarlik</a>
+    <a href="?category=Sumka va ryukzaklar" class="chip {% if active_category == 'Sumka va ryukzaklar' %}active{% endif %}">🎒 Sumka va ryukzaklar</a>
+    <a href="?category=Kiyim va aksessuarlar" class="chip {% if active_category == 'Kiyim va aksessuarlar' %}active{% endif %}">👕 Kiyim va aksessuarlar</a>
+    <a href="?category=Hujjatlar va kartalar" class="chip {% if active_category == 'Hujjatlar va kartalar' %}active{% endif %}">📄 Hujjatlar va kartalar</a>
+    <a href="?category=Telefon va aksessuarlar" class="chip {% if active_category == 'Telefon va aksessuarlar' %}active{% endif %}">📱 Telefon va aksessuarlar</a>
+</div>
+
 </div>
 
 <!-- CARDS -->
