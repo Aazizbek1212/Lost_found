@@ -2,277 +2,328 @@
 <!DOCTYPE html>
 <html lang="uz">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>{{ item.name }} — Topildi.uz</title>
+<meta name="description" content="{{ item.description|truncatechars:150 }}">
+{% if is_closed %}<meta name="robots" content="noindex, nofollow">{% endif %}
+
+<!-- Telegram / ijtimoiy tarmoqlarda ulashilganda chiroyli ko'rinish uchun -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Topildi.uz">
+<meta property="og:locale" content="uz_UZ">
+<meta property="og:title" content="{% if is_lost %}Yo'qolgan{% else %}Topilgan{% endif %}: {{ item.name }}">
+<meta property="og:description" content="{{ item.location }}. {{ item.description|truncatechars:140 }}">
+<meta property="og:url" content="{{ og_url }}">
+{% if og_image %}<meta property="og:image" content="{{ og_image }}">{% endif %}
+<meta name="twitter:card" content="{% if og_image %}summary_large_image{% else %}summary{% endif %}">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{% static 'styles/detail.css' %}"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+{% if has_map %}<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">{% endif %}
+<link rel="stylesheet" href="{% static 'styles/detail.css' %}">
+<link rel="stylesheet" href="{% static 'styles/communication.css' %}">
+<noscript><style>.dt-contact-value[hidden]{display:block !important}.dt-contact-toggle{display:none !important}</style></noscript>
 </head>
-<body>
+<body class="dt-page">
 
-<!-- NAVBAR -->
-<header class="navbar">
-  <a href="{% url 'home' %}" class="logo">
-    <span class="logo-icon">🔍</span>
-    <span class="logo-text">Topildi<span class="logo-dot">.uz</span></span>
-  </a>
-  <nav class="nav-links">
-    <a href="{% url 'home' %}">Bosh sahifa</a>
-    <a href="#">Xarita</a>
-    <a href="#">Jarayonlar</a>
-  </nav>
-  <div class="nav-actions">
-    <a href="#" class="nav-user">{{ request.user.username }}</a>
-    <a href="{% url 'logout' %}" class="nav-logout">Chiqish</a>
-    <a href="{% url 'add_item' %}" class="btn-primary">+ E'lon berish</a>
-  </div>
-</header>
+{% include 'partials/site_navigation.html' %}
 
-<!-- MESSAGES -->
 {% if messages %}
-<div class="messages-container">
+<div class="messages">
   {% for message in messages %}
-  <div class="message message-{{ message.tags }}">
-    <div class="message-content">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        {% if message.tags == 'success' %}
-        <polyline points="20 6 9 17 4 12"/>
-        {% else %}
-        <circle cx="12" cy="12" r="10"/>
-        <line x1="12" y1="8" x2="12" y2="12"/>
-        <line x1="12" y1="16" x2="12.01" y2="16"/>
-        {% endif %}
-      </svg>
-      <span>{{ message }}</span>
-    </div>
-    <button class="message-close" onclick="this.parentElement.remove()">✕</button>
-  </div>
+  <div class="alert alert-{{ message.tags }}">{{ message }}</div>
   {% endfor %}
 </div>
 {% endif %}
 
-<!-- BREADCRUMB -->
-<div class="breadcrumb-bar">
-  <div class="container">
-    <a href="{% url 'items' %}" class="back-link">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-      Barcha e'lonlar
-    </a>
-    <span class="bc-sep">/</span>
-    <span class="bc-cur">{{ item.name }}</span>
-  </div>
-</div>
+<main class="dt-main">
+  <div class="dt-wrap">
 
-<main class="main-content">
-  <div class="container">
-    <div class="detail-grid">
+    <div class="dt-crumbs" role="navigation" aria-label="Orqaga">
+      <a class="dt-back" href="{% url 'items' %}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        Barcha e'lonlar
+      </a>
+    </div>
 
-      <!-- ====== LEFT COLUMN ====== -->
-      <div class="left-col">
+    <div class="dt-grid">
 
-        <!-- IMAGE -->
-        <div class="image-wrap">
-          {% if item.item_type == 'lost' %}
-            <span class="type-badge lost">🔴 Yo'qolgan</span>
-          {% else %}
-            <span class="type-badge found">🟢 Topilgan</span>
-          {% endif %}
+      <!-- ============ RASM + SARLAVHA ============ -->
+      <section class="dt-media">
+        <figure class="dt-figure">
+          <div class="dt-chips">
+            <span class="dt-chip {{ item.item_type }}"><i class="dt-dot"></i>{% if is_lost %}Yo'qolgan{% else %}Topilgan{% endif %}</span>
+            {% if is_returned %}
+              <span class="dt-chip returned">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/></svg>
+                Egasiga qaytarilgan
+              </span>
+            {% elif is_closed %}
+              <span class="dt-chip closed">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+                {{ item.get_status_display }}
+              </span>
+            {% endif %}
+          </div>
           {% if item.image %}
-            <img src="{{ item.image.url }}" alt="{{ item.name }}" class="item-img">
+            <img src="{{ item.image.url }}" alt="{{ item.name }}" width="1200" height="750" decoding="async" fetchpriority="high">
           {% else %}
-            <div class="no-img">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-              <p>Rasm yuklanmagan</p>
+            <div class="dt-noimg">
+              <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+              <span>Rasm yuklanmagan</span>
             </div>
           {% endif %}
-        </div>
+        </figure>
 
-        <!-- TITLE & META -->
-        <div class="item-header">
-          <h1 class="item-title">{{ item.name }}</h1>
-          <div class="item-meta">
-            {% if item.category %}
-              <span class="meta-tag">{{ item.category.name }}</span>
-            {% endif %}
-            <span class="meta-tag">{{ item.date|date:"d.m.Y" }}</span>
-            {% if item.location %}
-              <span class="meta-tag">{{ item.location }}</span>
-            {% endif %}
+        <h1 class="dt-title">{{ item.name }}</h1>
+        <dl class="dt-facts">
+          {% if item.category %}
+          <div><dt>Kategoriya</dt><dd>{{ item.category.name }}</dd></div>
+          {% endif %}
+          <div>
+            <dt>{% if is_lost %}Yo'qolgan sana{% else %}Topilgan sana{% endif %}</dt>
+            <dd><time datetime="{{ item.date|date:'Y-m-d' }}">{{ item.date|date:"d.m.Y" }}</time></dd>
           </div>
-        </div>
+        </dl>
+      </section>
 
-        <!-- DESCRIPTION -->
-        <div class="section-card">
-          <div class="section-label">Tavsif</div>
-          <p class="desc-text">{{ item.description }}</p>
-        </div>
+      <!-- ============ TAVSIF ============ -->
+      <section class="dt-block dt-desc">
+        <h2 class="dt-h">Tavsif</h2>
+        <p class="dt-prose">{{ item.description|linebreaksbr }}</p>
+      </section>
 
-        <!-- DETAILS -->
-        <div class="section-card">
-          <div class="section-label">Tafsilotlar</div>
-          <div class="detail-row">
-            <span class="dk">Holati</span>
-            <span class="dv">
-              {% if item.item_type == 'lost' %}
-                <span class="status-chip lost">Yo'qolgan</span>
-              {% else %}
-                <span class="status-chip found">Topilgan</span>
-              {% endif %}
+      <!-- ============ O'NG USTUN: aloqa, ulashish ============ -->
+      <aside class="dt-aside" aria-label="Aloqa va ulashish">
+        <div class="dt-sticky">
+
+          {% if is_returned %}
+          <div class="dt-state returned">
+            <span class="dt-state-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/></svg>
             </span>
+            <h2 class="dt-state-title">Egasiga qaytarilgan</h2>
+            <p>Bu buyum egasiga topshirilgan va e'lon yopilgan. Yopilgan e'lonlar umumiy ro'yxatda ko'rinmaydi, faqat e'lon egasining profilida saqlanadi.</p>
           </div>
-          <div class="detail-row">
-            <span class="dk">Kategoriya</span>
-            <span class="dv">{{ item.category.name|default:"—" }}</span>
+          {% elif is_closed %}
+          <div class="dt-state closed">
+            <span class="dt-state-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+            </span>
+            <h2 class="dt-state-title">E'lon yopilgan</h2>
+            <p>Holati: {{ item.get_status_display }}. Yopilgan e'lonlar umumiy ro'yxatda ko'rinmaydi, faqat e'lon egasining profilida saqlanadi.</p>
           </div>
-          <div class="detail-row">
-            <span class="dk">Sana</span>
-            <span class="dv">{{ item.date|date:"d.m.Y" }}</span>
-          </div>
-          <div class="detail-row last">
-            <span class="dk">Manzil</span>
-            <span class="dv">{{ item.location|default:"Ko'rsatilmagan" }}</span>
-          </div>
-        </div>
-
-        <!-- ====== COMMENTS SECTION ====== -->
-        <div class="section-card" id="comments-section">
-          <div class="section-label-row">
-            <div class="section-label">
-              Izohlar
-              <span class="comment-count">{{ item.comments.count }}</span>
-            </div>
-          </div>
-
-          <!-- Comment Form -->
-          {% if user.is_authenticated %}
-          <form method="POST" action="{% url 'add_comment' item.pk %}" class="comment-form">
-            {% csrf_token %}
-            <div class="comment-input-wrap">
-              <div class="comment-avatar">{{ user.username|slice:":1"|upper }}</div>
-              <div class="comment-field-wrap">
-                <textarea name="text" class="comment-textarea" placeholder="Izoh yozing..." rows="2" required></textarea>
-                <button type="submit" class="comment-submit">Yuborish</button>
+          {% else %}
+          <div class="dt-card dt-contact">
+            <div class="dt-owner">
+              <span class="dt-avatar">{{ item.user.username|slice:":1"|upper }}</span>
+              <div>
+                <div class="dt-owner-name">{{ item.user.username }}</div>
+                <div class="dt-owner-role">E'lon egasi</div>
               </div>
             </div>
-          </form>
-          {% else %}
-          <div class="login-prompt">
-            Izoh qoldirish uchun <a href="{% url 'login' %}?next={{ request.path }}">kirish</a> kerak
-          </div>
-          {% endif %}
 
-          <!-- Comments List -->
-          <div class="comments-list">
-            {% for comment in item.comments.all|slice:":10" %}
-            <div class="comment-item">
-              <div class="comment-avatar-sm">{{ comment.user.username|slice:":1"|upper }}</div>
-              <div class="comment-body">
-                <div class="comment-header">
-                  <span class="comment-author">{{ comment.user.username }}</span>
-                  <span class="comment-time">{{ comment.created_at|timesince }} oldin</span>
-                  {% if user == comment.user %}
-                  <form method="POST" action="{% url 'delete_comment' comment.pk %}" class="delete-form" style="margin-left: auto;">
-                    {% csrf_token %}
-                    <button type="submit" class="delete-btn" title="O'chirish">🗑️</button>
-                  </form>
+            {% if item.contact_info %}
+              {% if user.is_authenticated %}
+                <div class="dt-contact-label">Aloqa ma'lumoti</div>
+                <div class="dt-contact-value" id="contactInfo" hidden>
+                  {% if '@' in item.contact_info and item.contact_info|length < 64 and item.contact_info|slice:":1" != '+' %}
+                    <a href="https://t.me/{{ item.contact_info|cut:'@' }}" target="_blank" rel="noopener noreferrer">{{ item.contact_info }}</a>
+                  {% else %}
+                    <a href="tel:{{ item.contact_info|cut:' ' }}">{{ item.contact_info }}</a>
                   {% endif %}
                 </div>
-                <p class="comment-text">{{ comment.text }}</p>
-              </div>
-            </div>
-            {% empty %}
-            <div class="no-comments">
-              <p>Hali izoh yo'q. Birinchi bo'lib izoh qoldiring!</p>
-            </div>
-            {% endfor %}
+                <button type="button" class="dt-btn dt-btn-gold dt-btn-block dt-contact-toggle" id="contactToggle" aria-controls="contactInfo" aria-expanded="false">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg>
+                  <span class="dt-toggle-label">Bog'lanish</span>
+                </button>
+              {% else %}
+                <p class="dt-muted dt-mb">Aloqa ma'lumotini ko'rish uchun tizimga kiring.</p>
+                <a class="dt-btn dt-btn-gold dt-btn-block" href="{% url 'login' %}?next={{ request.path|urlencode }}">Kirish va bog'lanish</a>
+              {% endif %}
+            {% else %}
+              <p class="dt-muted">Aloqa ma'lumoti ko'rsatilmagan. Izohlarda yozishingiz mumkin.</p>
+            {% endif %}
+
+            {% if user == item.user %}
+              <p class="dt-muted dt-own-note">Bu sizning e'loningiz. Buyum qaytgach, profilingizdagi «E'lonni yopish» tugmasini bosing.</p>
+            {% endif %}
           </div>
-        </div>
-      </div>
 
-      <!-- ====== RIGHT SIDEBAR ====== -->
-      <div class="right-col">
-
-        <!-- LOCATION -->
-        <div class="section-card">
-          <div class="section-label">Joylashuv</div>
-          <div class="location-block">
-            <div class="location-icon">📍</div>
-            <div>
-              <div class="location-name">{{ item.location|default:"Ko'rsatilmagan" }}</div>
-              <div class="location-sub">Topilgan / Yo'qolgan joy</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- CONTACT -->
-        <div class="section-card contact-card">
-          <div class="section-label">E'lon egasi</div>
-          <div class="user-row">
-            <div class="user-avatar">{{ item.user.username|slice:":1"|upper }}</div>
-            <div>
-              <div class="user-name">{{ item.user.username }}</div>
-              <div class="user-role">Foydalanuvchi</div>
+          <div class="dt-card dt-share">
+            <h2 class="dt-h dt-h-sm">Ulashish</h2>
+            <p class="dt-muted dt-mb">Ko'proq odam ko'rsa, egasi tezroq topiladi.</p>
+            <div class="dt-share-row">
+              <a class="dt-btn dt-btn-ghost" href="https://t.me/share/url?url={{ og_url|urlencode:'' }}&amp;text={{ item.name|urlencode:'' }}" target="_blank" rel="noopener noreferrer">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                Telegram
+              </a>
+              <button type="button" class="dt-btn dt-btn-ghost" id="copyLink" data-url="{{ og_url }}">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>
+                Nusxalash
+              </button>
             </div>
           </div>
-          {% if item.contact_info %}
-          <div class="contact-label">Aloqa ma'lumoti</div>
-          <div class="contact-value">{{ item.contact_info }}</div>
+
+          <div class="dt-notice">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg>
+            <p>Topilgan buyumni shaxsan uchrashuv orqali olishni tavsiya qilamiz. Xavfsiz joylarda uchrashing.</p>
+          </div>
           {% endif %}
-          <a href="tel:{{ item.contact_info }}" class="btn-contact">📞 Bog'lanish</a>
+
+          {% if user.is_authenticated and can_report %}
+          <button class="dt-report" type="button" id="reportBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></svg>
+            Shikoyat bildirish
+          </button>
+          {% elif not user.is_authenticated and not is_closed %}
+          <a class="dt-report" href="{% url 'login' %}?next={{ request.path|urlencode }}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></svg>
+            Shikoyat bildirish
+          </a>
+          {% endif %}
+
         </div>
+      </aside>
 
-        <!-- NOTICE -->
-        <div class="notice-card">
-          <p class="notice-text">⚠️ Topilgan buyumni shaxsan uchrashuv orqali olishni tavsiya qilamiz. Xavfsiz joylarda uchrashing.</p>
+      <!-- ============ JOYLASHUV ============ -->
+      <section class="dt-block dt-where">
+        <h2 class="dt-h">{% if is_lost %}Yo'qolgan joy{% else %}Topilgan joy{% endif %}</h2>
+        <p class="dt-place">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+          <span>{{ item.location }}</span>
+        </p>
+        {% if has_map %}
+        <div class="dt-map" id="dtMap"
+             data-lat="{{ item.latitude|stringformat:'f' }}"
+             data-lng="{{ item.longitude|stringformat:'f' }}"
+             data-accuracy="{{ item.location_accuracy|default:'street' }}"
+             data-type="{{ item.item_type }}"
+             role="img" aria-label="Xaritada joylashuv: {{ item.location }}"></div>
+        <p class="dt-map-note" id="dtMapNote" hidden></p>
+        {% endif %}
+      </section>
+
+      <!-- ============ IZOHLAR ============ -->
+      <section class="dt-block" id="comments-section">
+        <h2 class="dt-h">Izohlar <span class="dt-count" id="commentCount">{{ comments_total }}</span></h2>
+
+        {% if is_closed %}
+          <p class="dt-muted">E'lon yopilgan, yangi izoh qoldirib bo'lmaydi.</p>
+        {% elif user.is_authenticated %}
+          <form method="POST" action="{% url 'add_comment' item.pk %}" class="dt-comment-form" id="commentForm">
+            {% csrf_token %}
+            <span class="dt-avatar">{{ user.username|slice:":1"|upper }}</span>
+            <div class="dt-field">
+              <textarea name="text" id="commentText" class="dt-textarea" placeholder="Buyum haqida izoh yozing..." rows="1" maxlength="2000" required></textarea>
+              <button type="submit" class="dt-btn dt-btn-gold dt-btn-sm" id="commentSubmit">Yuborish</button>
+            </div>
+          </form>
+        {% else %}
+          <div class="dt-login">
+            Izoh qoldirish uchun <a href="{% url 'login' %}?next={{ request.path|urlencode }}">kiring</a>.
+          </div>
+        {% endif %}
+
+        <div class="dt-comments-list" id="commentsList">
+          {% for comment in comments %}
+          <div class="dt-comment" id="comment-{{ comment.pk }}" data-comment-id="{{ comment.pk }}">
+            <span class="dt-avatar sm">{{ comment.user.username|slice:":1"|upper }}</span>
+            <div class="dt-comment-body">
+              <div class="dt-comment-head">
+                <span class="dt-author">{{ comment.user.username }}</span>
+                <span class="dt-time">{{ comment.created_at|timesince }} oldin</span>
+                {% if user == comment.user or user.is_staff %}
+                <form method="POST" action="{% url 'delete_comment' comment.pk %}" class="delete-form">
+                  {% csrf_token %}
+                  <button type="submit" class="dt-del-btn" aria-label="Izohni o'chirish">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>
+                    <span class="dt-del-label">O'chirilsinmi?</span>
+                  </button>
+                </form>
+                {% endif %}
+              </div>
+              <p class="dt-ctext">{{ comment.text|linebreaksbr }}</p>
+            </div>
+          </div>
+          {% empty %}
+          <p class="dt-empty" id="noComments">Hali izoh yo'q.{% if not is_closed %} Buyum haqida biror narsa bilsangiz, birinchi bo'lib yozing.{% endif %}</p>
+          {% endfor %}
         </div>
+        {% if comments_total > comments|length %}
+        <p class="dt-more">Eng so'nggi {{ comments|length }} ta izoh ko'rsatilgan.</p>
+        {% endif %}
+      </section>
 
-        <!-- REPORT BUTTON -->
-        <button class="btn-report" type="button" id="reportBtn">
-          ⚠️ Shikoyat bildirish
-        </button>
+      <!-- ============ O'XSHASH E'LONLAR ============ -->
+      {% if related_items %}
+      <section class="dt-block dt-related">
+        <h2 class="dt-h">O'xshash e'lonlar</h2>
+        <div class="dt-rel-list">
+          {% for related in related_items %}
+          <a class="dt-rel" href="{% url 'item_detail' related.pk %}">
+            {% if related.image %}
+              <img class="dt-rel-thumb" src="{{ related.image.url }}" alt="" loading="lazy" width="72" height="72">
+            {% else %}
+              <span class="dt-rel-thumb dt-rel-empty" aria-hidden="true"></span>
+            {% endif %}
+            <span class="dt-rel-body">
+              <span class="dt-rel-name">{{ related.name }}</span>
+              <span class="dt-rel-meta">{{ related.date|date:"d.m.Y" }}</span>
+            </span>
+          </a>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
 
-      </div>
     </div>
   </div>
 </main>
 
-<!-- REPORT MODAL -->
-<div class="modal-overlay" id="reportModal">
-  <div class="modal-box">
-    <div class="modal-header">
-      <div class="modal-title">⚠️ Shikoyat bildirish</div>
-      <button class="modal-close" id="closeModalBtn">&times;</button>
+<!-- ============ SHIKOYAT OYNASI ============ -->
+<div class="dt-modal" id="reportModal" role="dialog" aria-modal="true" aria-labelledby="reportTitle" hidden>
+  <div class="dt-modal-box">
+    <div class="dt-modal-head">
+      <h2 class="dt-modal-title" id="reportTitle">Shikoyat bildirish</h2>
+      <button class="dt-modal-close" id="closeModalBtn" type="button" aria-label="Yopish">&times;</button>
     </div>
-    <p class="modal-desc">Ushbu e'lon qoidalarimizni buzadimi? Sababini tanlang:</p>
+    <p class="dt-modal-desc">Bu e'lon qoidalarni buzadimi? Sababini tanlang.</p>
     <form method="POST" action="{% url 'report_item' item.pk %}" id="reportForm">
       {% csrf_token %}
-      <div class="report-options">
-        <label class="report-option">
-          <input type="radio" name="reason" value="spam"> 🚫 Spam yoki aldamchi
-        </label>
-        <label class="report-option">
-          <input type="radio" name="reason" value="duplicate"> 📋 Takroriy e'lon
-        </label>
-        <label class="report-option">
-          <input type="radio" name="reason" value="wrong_info"> ❌ Noto'g'ri ma'lumot
-        </label>
-        <label class="report-option">
-          <input type="radio" name="reason" value="inappropriate"> ⚠️ Noo'rin kontent
-        </label>
-        <label class="report-option">
-          <input type="radio" name="reason" value="other"> 💬 Boshqa sabab
-        </label>
+      <div class="dt-opts">
+        <label class="dt-opt"><input type="radio" name="reason" value="spam"><span>Spam yoki reklama</span></label>
+        <label class="dt-opt"><input type="radio" name="reason" value="fake"><span>Soxta e'lon</span></label>
+        <label class="dt-opt"><input type="radio" name="reason" value="duplicate"><span>Takroriy e'lon</span></label>
+        <label class="dt-opt"><input type="radio" name="reason" value="wrong_info"><span>Noto'g'ri ma'lumot</span></label>
+        <label class="dt-opt"><input type="radio" name="reason" value="inappropriate"><span>Nomaqbul kontent</span></label>
+        <label class="dt-opt"><input type="radio" name="reason" value="other"><span>Boshqa sabab</span></label>
       </div>
-      <textarea name="description" class="report-textarea" placeholder="Qo'shimcha ma'lumot (ixtiyoriy)..." rows="3"></textarea>
-      <div class="modal-footer">
-        <button type="button" class="btn-cancel" id="cancelModalBtn">Bekor qilish</button>
-        <button type="submit" class="btn-submit-report">Yuborish</button>
+      <textarea name="description" id="reportText" class="dt-textarea dt-report-text" placeholder="Qo'shimcha ma'lumot (ixtiyoriy)" rows="3" maxlength="500"></textarea>
+      <div class="dt-counter" id="reportCount">0 / 500</div>
+      <p class="dt-error" id="reportError" role="alert" hidden>Iltimos, sababni tanlang.</p>
+      <div class="dt-modal-foot">
+        <button type="button" class="dt-btn dt-btn-ghost" id="cancelModalBtn">Bekor qilish</button>
+        <button type="submit" class="dt-btn dt-btn-gold btn-submit-report">Yuborish</button>
       </div>
     </form>
   </div>
 </div>
+
+{% if user.is_authenticated %}
+{% include 'partials/communication_modals.html' %}
+{% endif %}
+
+<div class="dt-toast" id="dtToast" role="status" aria-live="polite"></div>
+
+{% if has_map %}<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>{% endif %}
 <script src="{% static 'js/detail.js' %}"></script>
+{% if user.is_authenticated %}
+<script src="{% static 'js/communication.js' %}"></script>
+{% endif %}
+<script src="{% static 'js/messages.js' %}"></script>
 </body>
 </html>

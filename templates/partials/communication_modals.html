@@ -1,0 +1,88 @@
+{% if user.is_authenticated %}
+<div class="communication-overlay" id="notifications-overlay" hidden>
+    <section class="communication-panel notifications-panel" role="dialog" aria-modal="true" aria-labelledby="notifications-title">
+        <div class="communication-panel-header">
+            <div>
+                <h2 id="notifications-title">Bildirishnomalar</h2>
+                <p>Yangi e'lonlar va admin xabarlari</p>
+            </div>
+            <div class="communication-panel-actions">
+                <button type="button" class="mark-read-button" id="notifications-mark-read" aria-label="Barcha xabarlarni o‘qilgan deb belgilash" title="Barchasini o‘qildi qilish">✓✓</button>
+                <button type="button" class="communication-close" data-close="notifications-overlay" aria-label="Yopish">×</button>
+            </div>
+        </div>
+        <div class="notification-tabs" role="tablist" aria-label="Bildirishnoma turlari">
+            <button type="button" class="notification-tab active" data-notification-filter="new_listing" role="tab" aria-selected="true">Yangiliklar</button>
+            <button type="button" class="notification-tab" data-notification-filter="other" role="tab" aria-selected="false">Admin xabarlari</button>
+        </div>
+        <div class="notification-list" id="notification-list" aria-live="polite">
+            <p class="communication-empty">Yuklanmoqda...</p>
+        </div>
+    </section>
+</div>
+
+<div class="communication-overlay" id="support-overlay" hidden>
+    <section class="communication-panel support-panel" role="dialog" aria-modal="true" aria-labelledby="support-title">
+        <div class="communication-panel-header">
+            <div>
+                <h2 id="support-title">Admin bilan bog'lanish</h2>
+                <p>Yozgan xabaringizni admin ko'rib, shu yerda javob beradi</p>
+            </div>
+            <button type="button" class="communication-close" data-close="support-overlay" aria-label="Yopish">×</button>
+        </div>
+        <div class="support-messages" id="support-messages" aria-live="polite">
+            <p class="communication-empty">Suhbat yuklanmoqda...</p>
+        </div>
+        <form class="support-compose" id="support-form">
+            {% csrf_token %}
+            <textarea id="support-input" maxlength="3000" rows="2" placeholder="Xabaringizni yozing..." required></textarea>
+            <button type="submit" id="support-send">Yuborish</button>
+        </form>
+        <p class="support-feedback" id="support-feedback" role="status"></p>
+    </section>
+</div>
+<div class="communication-overlay" id="profile-overlay" hidden>
+    <section class="communication-panel profile-panel" role="dialog" aria-modal="true" aria-labelledby="profile-title">
+        <div class="communication-panel-header">
+            <div>
+                <h2 id="profile-title">Profilim</h2>
+                <p>Hisobingiz va e'lonlaringiz</p>
+            </div>
+            <button type="button" class="communication-close" data-close="profile-overlay" aria-label="Yopish">×</button>
+        </div>
+
+        <div class="profile-scroll">
+            <div class="profile-hero">
+                <div class="profile-avatar">{{ user.username|slice:":1"|upper }}</div>
+                <div class="profile-name">{{ user.username }}</div>
+            </div>
+
+            <dl class="profile-details">
+                <div><dt>Email</dt><dd>{{ user.email|default:"—" }}</dd></div>
+                <div><dt>Telefon</dt><dd id="profile-phone">—</dd></div>
+                <div><dt>Ro'yxatdan o'tgan</dt><dd>{{ user.date_joined|date:"d.m.Y" }}</dd></div>
+            </dl>
+
+            <div class="profile-stats">
+                <div class="profile-stat">
+                    <span class="profile-stat-num" id="profile-stat-active">0</span>
+                    <span class="profile-stat-label">Aktiv e'lon</span>
+                </div>
+                <div class="profile-stat is-green">
+                    <span class="profile-stat-num" id="profile-stat-closed">0</span>
+                    <span class="profile-stat-label">Yopilgan</span>
+                </div>
+                <div class="profile-stat">
+                    <span class="profile-stat-num" id="profile-stat-rate">0%</span>
+                    <span class="profile-stat-label">Muvaffaqiyat</span>
+                </div>
+            </div>
+
+            <div class="profile-items-head">Mening e'lonlarim</div>
+            <div class="profile-items" id="profile-items">
+                <p class="communication-empty">Yuklanmoqda...</p>
+            </div>
+        </div>
+    </section>
+</div>
+{% endif %}

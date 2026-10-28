@@ -1,114 +1,196 @@
-const EMOJIS = {
-  'Hujjat': '📄', 'Telefon': '📱', 'Hamyon': '👜', 'Kalit': '🔑',
-  'Sumka': '🎒', 'Elektronika': '💻', 'Kiyim': '👔', 'Boshqa': '📦'
-};
+/* items.js — E'lonlar sahifasi (Topildi.uz) */
+(function () {
+  'use strict';
 
-let currentFilter = 'all';
-let currentCategoryFilter = null;
-let currentType = 'lost';
+  let currentType = 'lost';
 
-// 🔎 Qidirish va filtr
-function getFilteredCards() {
-  const q = document.getElementById('searchInput').value.toLowerCase();
-  const cards = document.querySelectorAll('#cardsGrid .card');
-  
-  cards.forEach(card => {
-    const type = card.classList.contains('lost') ? 'lost' : (card.classList.contains('found') ? 'found' : '');
-    const name = card.querySelector('h3')?.textContent.toLowerCase() || '';
-    const desc = card.querySelector('.card-meta')?.textContent.toLowerCase() || '';
-    const cardText = (name + ' ' + desc).toLowerCase();
-    
-    const matchType = currentFilter === 'all' || type === currentFilter;
-    const matchCat = !currentCategoryFilter || desc.includes(currentCategoryFilter.toLowerCase());
-    const matchQ = !q || cardText.includes(q);
-    
-    card.style.display = (matchType && matchCat && matchQ) ? '' : 'none';
-  });
-  
-  const visibleCards = document.querySelectorAll('#cardsGrid .card:not([style*="display: none"])');
-  let noResults = document.getElementById('noResults');
-  if (visibleCards.length === 0) {
-    if (!noResults) {
-      noResults = document.createElement('div');
-      noResults.id = 'noResults';
-      noResults.style.cssText = 'grid-column:1/-1;text-align:center;color:var(--muted);padding:60px 0;';
-      noResults.innerHTML = `
-        <div style="font-size:3rem;margin-bottom:16px">🔍</div>
-        <div style="font-family:Unbounded,sans-serif;font-size:1rem;font-weight:600;margin-bottom:8px">E'lon topilmadi</div>
-        <div style="font-size:0.85rem">Boshqa kalit so'z yoki filtr sinab ko'ring</div>`;
-      document.getElementById('cardsGrid').appendChild(noResults);
+  /* =========================================
+     MODAL
+  ========================================= */
+  function getOverlay() {
+    return document.getElementById('modalOverlay');
+  }
+
+  window.openModal = function (type) {
+    const overlay = getOverlay();
+    if (!overlay) return;
+    currentType = type === 'found' ? 'found' : 'lost';
+    window.setType(currentType);
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  };
+
+  window.closeModal = function () {
+    const overlay = getOverlay();
+    if (!overlay) return;
+    overlay.classList.remove('open');
+    document.body.style.overflow = '';
+  };
+
+  window.closeModalOutside = function (event) {
+    const overlay = getOverlay();
+    if (overlay && event.target === overlay) window.closeModal();
+  };
+
+  window.setType = function (type) {
+    currentType = type === 'found' ? 'found' : 'lost';
+    const isFound = currentType === 'found';
+
+    const typeInput = document.getElementById('itemType');
+    const btnLost = document.getElementById('btnLost');
+    const btnFound = document.getElementById('btnFound');
+    const locationFields = document.getElementById('locationFields');
+    const addressLabel = document.getElementById('addressLabel');
+    const locationStatus = document.getElementById('locationStatus');
+
+    if (typeInput) typeInput.value = currentType;
+    if (btnLost) btnLost.classList.toggle('active-lost', !isFound);
+    if (btnFound) btnFound.classList.toggle('active-found', isFound);
+
+    if (locationFields) {
+      locationFields.hidden = !isFound;
+      if (!isFound) {
+        locationFields.querySelectorAll('input').forEach((input) => {
+          if (input.type !== 'hidden') input.value = '';
+        });
+        const citySelect = locationFields.querySelector('select');
+        if (citySelect) citySelect.value = '';
+        const latitude = locationFields.querySelector('[name="latitude"]');
+        const longitude = locationFields.querySelector('[name="longitude"]');
+        if (latitude) latitude.value = '';
+        if (longitude) longitude.value = '';
+        if (locationStatus) locationStatus.textContent = '';
+      }
     }
-    noResults.style.display = '';
-  } else if (noResults) {
-    noResults.style.display = 'none';
+
+    if (addressLabel) {
+      addressLabel.textContent = isFound
+        ? "Ko'cha va uy manzili (ixtiyoriy)"
+        : "Ko'cha va uy manzili";
+    }
+  };
+
+  /* =========================================
+     TOAST
+  ========================================= */
+  function showToast(message, color) {
+    const toast = document.getElementById('toast');
+    const toastMsg = document.getElementById('toastMsg');
+    if (!toast || !toastMsg) return;
+    toastMsg.textContent = message;
+    toast.style.borderColor = color || 'var(--green)';
+    toast.classList.add('show');
+    window.setTimeout(() => toast.classList.remove('show'), 3200);
   }
-}
 
-function filterCards() { getFilteredCards(); }
+  /* =========================================
+     JOYLASHUVNI ANIQLASH (GPS)
+  ========================================= */
+  function initLocationDetection() {
+    const button = document.getElementById('detectLocationBtn');
+    if (!button) return;
 
-function filterByType(type, btn) {
-  currentFilter = type;
-  currentCategoryFilter = null;
-  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-  btn.classList.add('active');
-  filterCards();
-}
+    button.addEventListener('click', () => {
+      const locationStatus = document.getElementById('locationStatus');
+      const latitudeInput = document.querySelector('[name="latitude"]');
+      const longitudeInput = document.querySelector('[name="longitude"]');
+      const citySelect = document.querySelector('#locationFields [name="city"]');
+      const districtInput = document.getElementById('districtInput');
+      const addressInput = document.getElementById('addressInput');
 
-function filterByCategory(cat, btn) {
-  currentCategoryFilter = currentCategoryFilter === cat ? null : cat;
-  currentFilter = 'all';
-  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-  if (currentCategoryFilter) btn.classList.add('active');
-  else document.querySelector('.chip').classList.add('active');
-  filterCards();
-}
+      if (!navigator.geolocation) {
+        if (locationStatus) locationStatus.textContent = 'Brauzeringiz joylashuvni aniqlashni qo‘llamaydi.';
+        return;
+      }
 
-// 📄 Detal sahifa
-function showDetail(id) {
-  window.location.href = '/item/' + id + '/';
-}
+      button.disabled = true;
+      if (locationStatus) locationStatus.textContent = 'Joylashuv aniqlanmoqda...';
 
-// 🟢 Modal boshqaruvi
-function openModal(type) {
-  currentType = type || 'lost';
-  setType(currentType);
-  document.getElementById('modalOverlay').classList.add('open');
-}
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        const { latitude, longitude } = position.coords;
+        if (latitudeInput) latitudeInput.value = latitude;
+        if (longitudeInput) longitudeInput.value = longitude;
 
-function closeModal() {
-  document.getElementById('modalOverlay').classList.remove('open');
-}
+        try {
+          const response = await fetch(`/api/geocode/reverse/?lat=${latitude}&lon=${longitude}`);
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const place = await response.json();
 
-function closeModalOutside(e) {
-  if (e.target === document.getElementById('modalOverlay')) closeModal();
-}
+          if (place.city && citySelect) {
+            const normalizedCity = place.city.trim().toLocaleLowerCase();
+            const matchingOption = Array.from(citySelect.options).find(
+              (option) => option.textContent.trim().toLocaleLowerCase() === normalizedCity
+            );
+            if (matchingOption) citySelect.value = matchingOption.value;
+          }
 
-function setType(type) {
-  document.getElementById("itemType").value = type;
-  const btnLost = document.getElementById("btnLost");
-  const btnFound = document.getElementById("btnFound");
+          if (place.district && districtInput) districtInput.value = place.district;
+          const streetAddress = [place.road, place.house_number].filter(Boolean).join(', ');
+          if (streetAddress && addressInput) addressInput.value = streetAddress;
 
-  if (type === "lost") {
-    btnLost.classList.add("active-lost");
-    btnFound.classList.remove("active-found");
-  } else {
-    btnFound.classList.add("active-found");
-    btnLost.classList.remove("active-lost");
+          const foundPlace = [place.road, place.district, place.city].filter(Boolean).join(', ');
+          if (locationStatus) {
+            locationStatus.textContent = foundPlace
+              ? `Joylashuv aniqlandi: ${foundPlace}`
+              : 'GPS koordinatalari olindi va e’lon bilan saqlanadi.';
+          }
+        } catch (error) {
+          if (locationStatus) {
+            locationStatus.textContent = 'GPS koordinatalari olindi; manzil nomi topilmadi, koordinata saqlanadi.';
+          }
+        } finally {
+          button.disabled = false;
+        }
+      }, (error) => {
+        const errorMessages = {
+          1: 'Joylashuv ruxsatini bering va qayta urinib ko‘ring.',
+          2: 'Qurilma joylashuvni aniqlay olmadi.',
+          3: 'Joylashuvni aniqlash vaqti tugadi. Qayta urinib ko‘ring.',
+        };
+        if (locationStatus) locationStatus.textContent = errorMessages[error.code] || 'Joylashuv aniqlanmadi.';
+        button.disabled = false;
+      }, {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 60000,
+      });
+    });
   }
-}
 
-// ✅ Toast
-function showToast(msg, color) {
-  const t = document.getElementById('toast');
-  const m = document.getElementById('toastMsg');
-  m.textContent = msg;
-  t.style.borderColor = color || 'var(--green)';
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3000);
-}
+  /* =========================================
+     INIT
+  ========================================= */
+  document.addEventListener('DOMContentLoaded', () => {
+    const openButton = document.getElementById('openModalBtn');
+    if (openButton) openButton.addEventListener('click', () => window.openModal('lost'));
 
-// 🔧 Init
-document.addEventListener("DOMContentLoaded", () => {
-  const btn = document.getElementById("openModalBtn");
-  if (btn) btn.addEventListener("click", () => openModal('lost'));
-});
+    const itemForm = document.getElementById('itemForm');
+    if (itemForm) {
+      itemForm.addEventListener('submit', (event) => {
+        const typeInput = document.getElementById('itemType');
+        if (!typeInput || typeInput.value !== 'found') return;
+
+        const citySelect = itemForm.querySelector('[name="city"]');
+        const districtInput = document.getElementById('districtInput');
+        const addressInput = document.getElementById('addressInput');
+        const latitudeInput = itemForm.querySelector('[name="latitude"]');
+
+        const city = citySelect ? citySelect.value : '';
+        const district = districtInput ? districtInput.value.trim() : '';
+        const address = addressInput ? addressInput.value.trim() : '';
+        const hasCoordinates = latitudeInput && latitudeInput.value !== '';
+
+        if (!city && !district && !address && !hasCoordinates) {
+          event.preventDefault();
+          showToast('Topilgan buyum uchun viloyat, tuman yoki manzil kiriting.', 'var(--accent2)');
+        }
+      });
+    }
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') window.closeModal();
+    });
+
+    initLocationDetection();
+  });
+})();

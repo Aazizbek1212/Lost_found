@@ -1,247 +1,280 @@
-/* detail.js — Topildi.uz v2.1 */
+/* detail.js — E'lon sahifasi (Topildi.uz) */
+document.addEventListener('DOMContentLoaded', function () {
 
-document.addEventListener('DOMContentLoaded', function() {
   /* ------------------------------------------------
-     COMMENT TEXTAREA: auto-resize + enable submit
+     XABAR (TOAST)
   ------------------------------------------------ */
-  const textarea = document.getElementById('commentText');
-  const submitBtn = document.getElementById('commentSubmit');
+  var toastEl = document.getElementById('dtToast');
+  var toastTimer = null;
 
-  if (textarea && submitBtn) {
-    textarea.addEventListener('input', function() {
-      // auto-resize
-      this.style.height = 'auto';
-      this.style.height = Math.min(this.scrollHeight, 150) + 'px';
-      // enable/disable submit
-      submitBtn.disabled = this.value.trim().length === 0;
+  function toast(text) {
+    if (!toastEl) return;
+    toastEl.textContent = text;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove('show'); }, 2400);
+  }
+
+  /* ------------------------------------------------
+     ALOQA MA'LUMOTINI KO'RSATISH
+  ------------------------------------------------ */
+  var contactToggle = document.getElementById('contactToggle');
+  var contactInfo = document.getElementById('contactInfo');
+
+  if (contactToggle && contactInfo) {
+    var toggleLabel = contactToggle.querySelector('.dt-toggle-label');
+    contactToggle.addEventListener('click', function () {
+      contactInfo.hidden = !contactInfo.hidden;
+      contactToggle.setAttribute('aria-expanded', String(!contactInfo.hidden));
+      if (toggleLabel) toggleLabel.textContent = contactInfo.hidden ? "Bog'lanish" : 'Yashirish';
     });
   }
 
   /* ------------------------------------------------
-     ADD COMMENT WITH AJAX (optional enhancement)
+     HAVOLANI NUSXALASH
   ------------------------------------------------ */
-  // const commentForm = document.getElementById('commentForm');
-  // if (commentForm) {
-  //   commentForm.addEventListener('submit', function(e) {
-  //     e.preventDefault();
-      
-  //     const formData = new FormData(this);
-  //     const submitBtn = this.querySelector('.comment-submit');
-  //     const originalText = submitBtn.innerHTML;
-      
-  //     submitBtn.disabled = true;
-  //     submitBtn.innerHTML = 'Yuborilmoqda...';
-      
-  //     fetch(this.action, {
-  //       method: 'POST',
-  //       body: formData,
-  //       headers: { 'X-Requested-With': 'XMLHttpRequest' }
-  //     })
-  //     .then(res => res.json())
-  //     .then(data => {
-  //       if (data.success) {
-  //         // Add new comment to list
-  //         const commentsList = document.getElementById('commentsList');
-  //         const noComments = document.getElementById('noComments');
-          
-  //         if (noComments) noComments.remove();
-          
-  //         const newComment = createCommentElement(data.comment);
-  //         commentsList.insertAdjacentHTML('afterbegin', newComment);
-          
-  //         // Update comment count
-  //         const commentCount = document.getElementById('commentCount');
-  //         if (commentCount) {
-  //           const currentCount = parseInt(commentCount.textContent) || 0;
-  //           commentCount.textContent = currentCount + 1;
-  //         }
-          
-  //         // Clear textarea
-  //         textarea.value = '';
-  //         textarea.style.height = 'auto';
-  //         submitBtn.disabled = true;
-          
-  //         showToast('Izoh qo\'shildi!');
-  //       } else {
-  //         showToast(data.error || 'Xatolik yuz berdi');
-  //       }
-  //     })
-  //     .catch(() => {
-  //       showToast('Xatolik yuz berdi. Qaytadan urining.');
-  //     })
-  //     .finally(() => {
-  //       submitBtn.disabled = false;
-  //       submitBtn.innerHTML = originalText;
-  //     });
-  //   });
-  // }
-  
-  function createCommentElement(comment) {
-    return `
-      <div class="comment-item" id="comment-${comment.id}">
-        <div class="comment-avatar-sm">${comment.username.charAt(0).toUpperCase()}</div>
-        <div class="comment-body">
-          <div class="comment-header">
-            <span class="comment-author">${escapeHtml(comment.username)}</span>
-            <span class="comment-time">hozir</span>
-            ${comment.can_delete ? `
-            <form method="POST" action="/comment/${comment.id}/delete/" class="delete-form" data-comment-id="${comment.id}">
-              <input type="hidden" name="csrfmiddlewaretoken" value="${getCsrfToken()}">
-              <button type="submit" class="delete-btn" title="O'chirish">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <polyline points="3 6 5 6 21 6"/>
-                  <path d="M19 6l-1 14H6L5 6"/>
-                  <path d="M10 11v6M14 11v6"/>
-                  <path d="M9 6V4h6v2"/>
-                </svg>
-              </button>
-            </form>
-            ` : ''}
-          </div>
-          <p class="comment-text">${escapeHtml(comment.text)}</p>
-        </div>
-      </div>
-    `;
-  }
+  var copyBtn = document.getElementById('copyLink');
 
-  /* ------------------------------------------------
-     REPORT MODAL FUNCTIONS
-  ------------------------------------------------ */
-const modal = document.getElementById('reportModal');
-const reportBtn = document.getElementById('reportBtn');
-const closeModalBtn = document.getElementById('closeModalBtn');
-const cancelModalBtn = document.getElementById('cancelModalBtn');
-const reportForm = document.getElementById('reportForm');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', function () {
+      var url = copyBtn.dataset.url || window.location.href;
 
-// Modalni ochish
-if (reportBtn) {
-  reportBtn.onclick = function() {
-    modal.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-  };
-}
+      function done() { toast('Havola nusxalandi'); }
 
-// Modalni yopish funksiyasi
-function closeModal() {
-  modal.style.display = 'none';
-  document.body.style.overflow = '';
-}
-
-// Yopish tugmalari
-if (closeModalBtn) closeModalBtn.onclick = closeModal;
-if (cancelModalBtn) cancelModalBtn.onclick = closeModal;
-
-// Background bosilganda yopish
-modal.onclick = function(e) {
-  if (e.target === modal) closeModal();
-};
-
-// Form validation
-if (reportForm) {
-  reportForm.onsubmit = function(e) {
-    const selected = document.querySelector('input[name="reason"]:checked');
-    if (!selected) {
-      alert('Iltimos, sababni tanlang!');
-      e.preventDefault();
-      return false;
-    }
-    return true;
-  };
-}
-
-// Escape tugmasi
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape' && modal.style.display === 'flex') {
-    closeModal();
-  }
-});
-
-// Comment delete confirmation
-document.querySelectorAll('.delete-form').forEach(form => {
-  form.onsubmit = function(e) {
-    if (!confirm("Izohni o'chirishni tasdiqlaysizmi?")) {
-      e.preventDefault();
-    }
-  };
-});
-  /* ------------------------------------------------
-     TOAST NOTIFICATION
-  ------------------------------------------------ */
-  window.showToast = function(msg) {
-    const toast = document.getElementById('successToast');
-    const toastMsg = document.getElementById('toastMsg');
-    if (toast && toastMsg) {
-      toastMsg.textContent = msg;
-      toast.classList.add('show');
-      setTimeout(() => toast.classList.remove('show'), 3200);
-    }
-  };
-
-  /* ------------------------------------------------
-     DELETE COMMENT CONFIRMATION
-  ------------------------------------------------ */
-  document.querySelectorAll('.delete-form').forEach(form => {
-    form.addEventListener('submit', function(e) {
-      if (!confirm("Izohni o'chirishni tasdiqlaysizmi?")) {
-        e.preventDefault();
-      } else {
-        // Optional: AJAX delete
-        e.preventDefault();
-        const formData = new FormData(this);
-        
-        fetch(this.action, {
-          method: 'POST',
-          body: formData,
-          headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            const commentId = this.getAttribute('data-comment-id');
-            const commentElement = document.getElementById(`comment-${commentId}`);
-            if (commentElement) {
-              commentElement.remove();
-              showToast('Izoh o\'chirildi');
-              
-              // Update comment count
-              const commentCount = document.getElementById('commentCount');
-              if (commentCount) {
-                const currentCount = parseInt(commentCount.textContent) || 0;
-                commentCount.textContent = Math.max(0, currentCount - 1);
-              }
-              
-              // Show no comments message if empty
-              const commentsList = document.getElementById('commentsList');
-              if (commentsList && commentsList.children.length === 0) {
-                commentsList.innerHTML = `
-                  <div class="no-comments" id="noComments">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
-                      <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-                    </svg>
-                    <p>Hali izoh yo'q. Birinchi bo'lib izoh qoldiring!</p>
-                  </div>
-                `;
-              }
-            }
-          } else {
-            showToast(data.error || 'Xatolik yuz berdi');
-          }
-        })
-        .catch(() => {
-          showToast('Xatolik yuz berdi');
-        });
+      function fallback() {
+        var field = document.createElement('textarea');
+        field.value = url;
+        field.setAttribute('readonly', '');
+        field.style.position = 'fixed';
+        field.style.opacity = '0';
+        document.body.appendChild(field);
+        field.select();
+        try {
+          document.execCommand('copy');
+          done();
+        } catch (err) {
+          toast("Nusxalab bo'lmadi");
+        }
+        document.body.removeChild(field);
       }
+
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(url).then(done, fallback);
+      } else {
+        fallback();
+      }
+    });
+  }
+
+  /* ------------------------------------------------
+     IZOH MAYDONI: auto-resize, bo'sh bo'lsa tugma o'chiq
+  ------------------------------------------------ */
+  var commentForm = document.getElementById('commentForm');
+  var textarea = document.getElementById('commentText');
+  var submitBtn = document.getElementById('commentSubmit');
+
+  function syncComment() {
+    if (!textarea) return;
+    if (submitBtn) submitBtn.disabled = !textarea.value.trim();
+    textarea.style.height = 'auto';
+    textarea.style.height = Math.min(textarea.scrollHeight, 160) + 'px';
+  }
+
+  if (textarea) {
+    textarea.addEventListener('input', syncComment);
+    textarea.addEventListener('keydown', function (event) {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'Enter' && submitBtn && !submitBtn.disabled) {
+        event.preventDefault();
+        if (commentForm.requestSubmit) commentForm.requestSubmit();
+        else commentForm.submit();
+      }
+    });
+    syncComment();
+    /* orqaga qaytilganda (bfcache) holat to'g'ri bo'lsin */
+    window.addEventListener('pageshow', syncComment);
+  }
+
+  if (commentForm && submitBtn) {
+    commentForm.addEventListener('submit', function () {
+      submitBtn.disabled = true;
+    });
+  }
+
+  /* ------------------------------------------------
+     IZOHNI O'CHIRISH: ikki bosqichli tasdiq
+     (birinchi bosish "O'chirilsinmi?" ko'rsatadi, ikkinchisi o'chiradi)
+  ------------------------------------------------ */
+  document.querySelectorAll('.delete-form').forEach(function (form) {
+    var btn = form.querySelector('.dt-del-btn');
+    var timer = null;
+
+    function reset() {
+      form.dataset.armed = '';
+      if (btn) {
+        btn.classList.remove('is-armed');
+        btn.setAttribute('aria-label', "Izohni o'chirish");
+      }
+    }
+
+    form.addEventListener('submit', function (event) {
+      if (form.dataset.armed === '1') return;
+      event.preventDefault();
+      form.dataset.armed = '1';
+      if (btn) {
+        btn.classList.add('is-armed');
+        btn.setAttribute('aria-label', "O'chirishni tasdiqlash");
+      }
+      clearTimeout(timer);
+      timer = setTimeout(reset, 4000);
     });
   });
 
-  /* Helper functions */
-  function getCsrfToken() {
-    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+  /* ------------------------------------------------
+     SHIKOYAT OYNASI
+  ------------------------------------------------ */
+  var modal = document.getElementById('reportModal');
+  var reportBtn = document.getElementById('reportBtn');
+  var closeModalBtn = document.getElementById('closeModalBtn');
+  var cancelModalBtn = document.getElementById('cancelModalBtn');
+  var reportForm = document.getElementById('reportForm');
+  var reportText = document.getElementById('reportText');
+  var reportCount = document.getElementById('reportCount');
+  var reportError = document.getElementById('reportError');
+  var lastFocus = null;
+
+  function openModal() {
+    if (!modal) return;
+    lastFocus = document.activeElement;
+    modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+    var first = modal.querySelector('input[type="radio"]');
+    if (first) first.focus();
   }
-  
-  function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+
+  function closeModal() {
+    if (!modal) return;
+    modal.hidden = true;
+    document.body.style.overflow = '';
+    if (reportError) reportError.hidden = true;
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+
+  if (modal && reportBtn) {
+    reportBtn.addEventListener('click', openModal);
+    if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
+    if (cancelModalBtn) cancelModalBtn.addEventListener('click', closeModal);
+
+    modal.addEventListener('click', function (event) {
+      if (event.target === modal) closeModal();
+    });
+
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && !modal.hidden) closeModal();
+    });
+
+    /* Tab tugmasi oyna ichida aylanib turadi */
+    modal.addEventListener('keydown', function (event) {
+      if (event.key !== 'Tab') return;
+      var items = Array.prototype.filter.call(
+        modal.querySelectorAll('button, input, textarea, a[href]'),
+        function (el) { return !el.disabled && el.offsetParent !== null; }
+      );
+      if (!items.length) return;
+      var first = items[0];
+      var last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    });
+  }
+
+  if (reportText && reportCount) {
+    var max = reportText.getAttribute('maxlength') || '500';
+    var updateCount = function () {
+      reportCount.textContent = reportText.value.length + ' / ' + max;
+    };
+    reportText.addEventListener('input', updateCount);
+    updateCount();
+  }
+
+  if (reportForm) {
+    reportForm.addEventListener('submit', function (event) {
+      var selected = reportForm.querySelector('input[name="reason"]:checked');
+      if (!selected) {
+        event.preventDefault();
+        if (reportError) reportError.hidden = false;
+        return;
+      }
+      var submitButton = reportForm.querySelector('.btn-submit-report');
+      if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.textContent = 'Yuborilmoqda...';
+      }
+    });
+
+    reportForm.addEventListener('change', function () {
+      if (reportError) reportError.hidden = true;
+    });
+  }
+
+  /* ------------------------------------------------
+     MINI XARITA (#dtMap)
+  ------------------------------------------------ */
+  var mapEl = document.getElementById('dtMap');
+
+  if (mapEl && typeof L !== 'undefined') {
+    var lat = parseFloat(mapEl.dataset.lat);
+    var lng = parseFloat(mapEl.dataset.lng);
+
+    if (!isNaN(lat) && !isNaN(lng)) {
+      /* location_accuracy: street / district / city */
+      var LEVELS = {
+        street:   { zoom: 15, radius: 0,    note: '' },
+        district: { zoom: 12, radius: 2500, note: "Aniq manzil ko'rsatilmagan, e'lon tuman bo'yicha belgilangan." },
+        city:     { zoom: 10, radius: 9000, note: "Aniq manzil ko'rsatilmagan, e'lon shahar yoki viloyat bo'yicha belgilangan." }
+      };
+      var level = LEVELS[mapEl.dataset.accuracy] || LEVELS.street;
+      var type = mapEl.dataset.type === 'found' ? 'found' : 'lost';
+      var color = type === 'found' ? '#52b788' : '#c9a84c';
+
+      var map = L.map(mapEl, {
+        center: [lat, lng],
+        zoom: level.zoom,
+        scrollWheelZoom: false,
+        dragging: !L.Browser.mobile,
+        tap: false
+      });
+
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 16,
+        attribution: 'Tiles &copy; Esri'
+      }).addTo(map);
+
+      L.marker([lat, lng], {
+        keyboard: false,
+        icon: L.divIcon({ className: 'dt-pin ' + type, iconSize: [16, 16], iconAnchor: [8, 8] })
+      }).addTo(map);
+
+      if (level.radius) {
+        L.circle([lat, lng], {
+          radius: level.radius,
+          color: color,
+          weight: 1,
+          opacity: 0.7,
+          fillColor: color,
+          fillOpacity: 0.1
+        }).addTo(map);
+      }
+
+      var note = document.getElementById('dtMapNote');
+      if (note && level.note) {
+        note.textContent = level.note;
+        note.hidden = false;
+      }
+    }
   }
 });

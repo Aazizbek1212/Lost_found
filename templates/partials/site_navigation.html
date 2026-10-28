@@ -1,0 +1,116 @@
+<header class="site-header" id="hdr">
+    <a href="{% url 'home' %}" class="site-brand">
+        <span class="site-brand-mark" aria-hidden="true">🔍</span>
+        <span>Topildi<span class="site-brand-accent">.uz</span></span>
+    </a>
+    <nav class="site-nav-links" aria-label="Asosiy menyu">
+        <a href="{% url 'home' %}" data-nav="home"
+        class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}"
+        {% if request.resolver_match.url_name == 'home' %}aria-current="page"{% endif %}>Bosh sahifa</a>
+
+        <a href="{% url 'items' %}"
+        class="{% if request.resolver_match.url_name == 'items' or request.resolver_match.url_name == 'item_detail' %}active{% endif %}"
+        {% if request.resolver_match.url_name == 'items' or request.resolver_match.url_name == 'item_detail' %}aria-current="page"{% endif %}>E'lonlar</a>
+
+        <a href="{% url 'home' %}#map" data-section="map">Xarita</a>
+        <a href="{% url 'home' %}#how" data-section="how">Jarayonlar</a>
+
+        <a href="{% url 'about' %}"
+        class="{% if request.resolver_match.url_name == 'about' %}active{% endif %}"
+        {% if request.resolver_match.url_name == 'about' %}aria-current="page"{% endif %}>Biz haqimizda</a>
+    </nav>
+    <div class="site-nav-actions">
+        {% if user.is_authenticated %}
+        <div class="site-profile-menu">
+            <button type="button" class="site-profile-toggle" data-profile-toggle aria-expanded="false">
+                <span class="site-profile-avatar">{{ user.username|slice:":1"|upper }}</span>
+                <span>{{ user.username }}</span>
+                <span class="site-profile-caret" aria-hidden="true">⌄</span>
+            </button>
+            <div class="site-profile-dropdown" data-profile-dropdown hidden>
+                <div class="site-profile-heading">{{ user.username }}</div>
+                <button type="button" data-open-profile>Profilim</button>
+                <button type="button" data-open-support>Admin bilan bog'lanish</button>
+                {% if user.is_staff %}
+                <a href="{% url 'admin:index' %}">Admin panel</a>
+                {% endif %}
+                <form method="post" action="{% url 'logout' %}" class="site-logout-form">
+                    {% csrf_token %}
+                    <button type="submit">Chiqish</button>
+                </form>
+            </div>
+        </div>
+        {% include 'partials/communication_actions.html' %}
+        {% if request.resolver_match.url_name == 'home' %}
+        <button type="button" class="communication-trigger" id="open-chat-btn" title="AI yordamchi" aria-label="AI yordamchi">💬</button>
+        {% endif %}
+        {% if request.resolver_match.url_name == 'items' %}
+        <button id="openModalBtn" type="button" class="site-create-button">+ E'lon berish</button>
+        {% elif request.resolver_match.url_name == 'item_detail' %}
+        <a class="site-create-button" href="{% url 'add_item' %}">+ E'lon berish</a>
+        {% endif %}
+        {% else %}
+        <a class="site-auth-link" href="{% url 'login' %}?next={{ request.path|urlencode }}">Kirish</a>
+        <a class="site-create-button" href="{% url 'register' %}?next={{ request.path|urlencode }}">Ro'yxatdan o'tish</a>
+        {% endif %}
+    </div>
+</header>
+{% if request.resolver_match.url_name == 'home' %}
+<script>
+(function () {
+  var homeLink = document.querySelector('.site-nav-links a[data-nav="home"]');
+  var links = document.querySelectorAll('.site-nav-links a[data-section]');
+  var sections = [];
+
+  links.forEach(function (a) {
+    var el = document.getElementById(a.dataset.section);
+    if (el) sections.push({ link: a, el: el });
+  });
+
+  function update() {
+    var y = window.scrollY + window.innerHeight * 0.35;
+    var current = null;
+    sections.forEach(function (s) {
+      if (s.el.offsetTop <= y) current = s;
+    });
+    links.forEach(function (a) { a.classList.remove('active'); });
+    if (current) {
+      current.link.classList.add('active');
+      homeLink.classList.remove('active');
+    } else {
+      homeLink.classList.add('active');
+    }
+  }
+
+  window.addEventListener('scroll', update, { passive: true });
+  window.addEventListener('load', update);
+  update();
+})();
+</script>
+<script>
+(function () {
+  function hideMessages() {
+    var items = document.querySelectorAll('.messages > *');
+    items.forEach(function (el) {
+      if (el.dataset.timerSet) return;
+      el.dataset.timerSet = '1';
+
+      function hide() {
+        el.classList.add('is-hiding');
+        setTimeout(function () { el.remove(); }, 400);
+      }
+      setTimeout(hide, 5000);
+      el.addEventListener('click', hide);
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', hideMessages);
+  } else {
+    hideMessages();
+  }
+  window.addEventListener('load', hideMessages);
+})();
+</script>
+{% endif %}
+

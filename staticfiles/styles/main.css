@@ -110,13 +110,20 @@ body.hov #cur2 {
 }
 
 .reveal { 
-    opacity: 0; 
-    transform: translateY(32px); 
-    transition: opacity .8s cubic-bezier(.22,1,.36,1), transform .8s cubic-bezier(.22,1,.36,1); 
+    /* JS yuklanmasa ham kontent ko'rinib turishi uchun boshlang'ich holat ko'rinadigan. */
+    opacity: 1; 
+    transform: none; 
+}
+.reveal:not(.in) { 
+    animation: reveal-fallback .9s ease .3s both;
 }
 .reveal.in { 
     opacity: 1; 
     transform: none; 
+}
+@keyframes reveal-fallback {
+    from { opacity: 0; transform: translateY(32px); }
+    to { opacity: 1; transform: none; }
 }
 
 /* =========================================
@@ -612,12 +619,15 @@ nav a:hover::after {
     gap: 20px; 
 }
 
-.card {
+.card { 
     background: var(--ink2); 
     border: 1px solid var(--border); 
     border-radius: 18px;
     overflow: hidden; 
-    cursor: none;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    display: block;
     transition: transform .4s cubic-bezier(.23,1,.32,1), box-shadow .4s, border-color .4s;
 }
 .card:hover { 
@@ -642,6 +652,23 @@ nav a:hover::after {
     right: 0; 
     height: 55px; 
     background: linear-gradient(transparent, var(--ink2)); 
+    pointer-events: none;
+}
+.card-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.no-image {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ink3, #121212);
+    color: var(--fg3);
+    font-size: 56px;
 }
 .cst { 
     position: absolute; 
@@ -726,6 +753,16 @@ nav a:hover::after {
     z-index: 1;
 }
 
+.found-items-map {
+    width: 100%;
+    height: min(72vh, 680px);
+    min-height: 380px;
+    border: 1px solid var(--border-g);
+    border-radius: 16px;
+    overflow: hidden;
+    background: #101216;
+}
+
 .map-side {
     flex: 1;
     min-width: 280px;
@@ -796,9 +833,41 @@ nav a:hover::after {
     border-color: #0066cc;
 }
 
+.map-location-input {
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 11px 12px;
+    border-radius: 8px;
+}
+
+.map-location-hint {
+    margin: 0 0 12px;
+    color: var(--fg2);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.map-result {
+    margin-top: 14px;
+    padding: 13px;
+    border: 1px solid var(--border-g);
+    border-radius: 10px;
+    background: rgba(255,255,255,.055);
+    color: var(--fg);
+}
+
+.map-result[hidden] { display: none; }
+.map-result strong { color: var(--gold2); font-size: 13px; }
+.map-result p { margin-top: 7px; color: var(--fg2); font-size: 12px; line-height: 1.55; overflow-wrap: anywhere; }
+
 @media (max-width: 768px) {
     .map-wrap {
         flex-direction: column;
+    }
+
+    .found-items-map {
+        height: 62vh;
+        min-height: 340px;
     }
 }
 
@@ -1500,9 +1569,9 @@ footer {
     border-radius: 16px;
     width: 100%;
     max-width: 500px;
+    height: min(640px, calc(100vh - 40px));
     max-height: calc(100vh - 40px);
-    height: auto;
-    min-height: 400px;
+    min-height: 0;
     box-shadow: 0 20px 60px rgba(0,0,0,0.5);
     display: flex;
     flex-direction: column;
@@ -1636,6 +1705,7 @@ footer {
         max-width: 100%;
         max-height: 90vh;
         height: 90vh;
+        height: 90dvh;
         border-radius: 16px 16px 0 0;
         margin-bottom: 0;
     }
@@ -1958,4 +2028,112 @@ footer {
 
 @keyframes spin {
     to { transform: rotate(360deg); }
+}
+/* =========================================
+   FEED ITEMS (index.html "Jonli faoliyat")
+========================================= */
+.feed-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 28px;
+    border-bottom: 1px solid var(--border);
+    color: var(--fg);
+    text-decoration: none;
+    transition: background .2s;
+}
+.feed-item:last-child { border-bottom: none; }
+.feed-item:hover { background: rgba(201,168,76,.06); }
+.feed-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: var(--gold);
+}
+.feed-dot.lost { background: var(--red); }
+.feed-dot.found { background: var(--green); }
+.feed-text { flex: 1; font-size: 13.5px; }
+.feed-time { color: var(--fg3); font-size: 12px; white-space: nowrap; }
+
+/* =========================================
+   FOOTER LINK BUTTON
+========================================= */
+.f-link-button {
+    background: none;
+    border: 0;
+    padding: 0;
+    color: var(--fg2);
+    font: inherit;
+    font-size: 13.5px;
+    text-align: left;
+    cursor: pointer;
+    transition: color .3s;
+}
+.f-link-button:hover { color: var(--gold); }
+
+/* =========================================
+   HOME MODAL (haqiqiy forma)
+========================================= */
+.frow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 16px;
+}
+.frow.full { grid-template-columns: 1fr; }
+.frow > div { min-width: 0; }
+.modal-auth-note {
+    margin-top: 14px;
+    color: var(--fg3);
+    font-size: 12.5px;
+    line-height: 1.6;
+}
+.modal-auth-note a { color: var(--gold); }
+
+/* =========================================
+   DJANGO MESSAGES (global)
+========================================= */
+.messages {
+    position: fixed;
+    top: 84px;
+    right: 24px;
+    z-index: 1200;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: min(420px, calc(100vw - 48px));
+}
+.messages .alert {
+    padding: 13px 18px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--ink2);
+    color: var(--fg);
+    font-size: 13.5px;
+    line-height: 1.5;
+    box-shadow: 0 14px 34px rgba(0,0,0,.4);
+}
+.messages .alert-success { border-color: rgba(32,178,107,.55); }
+.messages .alert-error,
+.messages .alert-danger { border-color: rgba(217,95,95,.55); }
+.messages .alert-warning { border-color: rgba(245,166,35,.55); }
+.messages .alert-info { border-color: rgba(201,168,76,.55); }
+
+/* =========================================
+   REDUCED MOTION
+========================================= */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: .001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .001ms !important;
+        scroll-behavior: auto !important;
+    }
+    .reveal { opacity: 1; transform: none; }
+}
+
+@media (max-width: 640px) {
+    .frow { grid-template-columns: 1fr; }
+    .messages { top: 72px; right: 12px; left: 12px; }
 }

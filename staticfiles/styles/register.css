@@ -9,24 +9,48 @@
 }
 
 :root {
-    --ink: #0d0d0d;
-    --cream: #f5f0e8;
+    --ink: #f2eee6;
+    --cream: #111216;
     --gold: #c9a84c;
     --gold-light: #e8c97a;
-    --rust: #c0392b;
-    --muted: #8a7f72;
-    --border: #d4c9b0;
-    --white: #fff;
+    --rust: #e17870;
+    --muted: #a3a09a;
+    --border: rgba(226, 195, 125, 0.24);
+    --white: #1b1c20;
 }
 
 body {
     min-height: 100vh;
     background: var(--cream);
+    color: var(--ink);
     font-family: 'DM Sans', sans-serif;
     display: flex;
     align-items: stretch;
     overflow-x: hidden;
+    isolation: isolate;
 }
+
+body::before {
+    content: '';
+    position: fixed;
+    inset: -12%;
+    z-index: -1;
+    pointer-events: none;
+    background:
+        repeating-linear-gradient(128deg, transparent 0 76px, rgba(255,255,255,0.018) 77px, transparent 78px),
+        repeating-linear-gradient(38deg, transparent 0 112px, rgba(201,168,76,0.035) 113px, transparent 114px),
+        radial-gradient(ellipse at 18% 18%, rgba(201,168,76,0.12), transparent 34%),
+        radial-gradient(ellipse at 83% 76%, rgba(86,111,119,0.1), transparent 36%),
+        linear-gradient(135deg, #0a0b0e 0%, #17181c 52%, #0c0d10 100%);
+    background-size: 100% 100%, 100% 100%, 140% 140%, 150% 150%, 100% 100%;
+    animation: ambientDrift 28s ease-in-out infinite alternate;
+}
+
+@keyframes ambientDrift {
+    from { background-position: 0 0, 0 0, 0% 0%, 100% 100%, 0 0; }
+    to { background-position: 0 0, 0 0, 100% 35%, 20% 0%, 0 0; }
+}
+
 
 /* LEFT PANEL */
 .left-panel {
@@ -171,32 +195,63 @@ body {
 }
 
 /* RIGHT PANEL */
+.left-panel { display: none; }
+
 .right-panel {
     flex: 1;
+    width: 100%;
+    min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 60px 40px;
-    background: #0d0d0d; /* 🔥 qora */
+    padding: 48px 24px;
+    background: transparent;
     position: relative;
 }
 
 .right-panel::before {
     content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background-image:
-        repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(0,0,0,0.03) 39px, rgba(0,0,0,0.03) 40px),
-        repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(0,0,0,0.03) 39px, rgba(0,0,0,0.03) 40px);
+    position: fixed;
+    inset: 0;
+    z-index: 0;
     pointer-events: none;
+    background-image:
+        linear-gradient(112deg, transparent 42%, rgba(232,201,122,0.045) 49%, transparent 56%),
+        repeating-linear-gradient(0deg, transparent 0 63px, rgba(255,255,255,0.018) 64px),
+        repeating-linear-gradient(90deg, transparent 0 63px, rgba(255,255,255,0.018) 64px);
+    background-size: 220% 100%, 100% 100%, 100% 100%;
+    animation: lightSweep 22s ease-in-out infinite;
+}
+
+@keyframes lightSweep {
+    0%, 100% { background-position: 120% 0, 0 0, 0 0; }
+    50% { background-position: -20% 0, 0 0, 0 0; }
 }
 
 .form-container {
     width: 100%;
-    max-width: 480px;
+    max-width: 520px;
+    padding: 40px;
+    background: rgba(26, 24, 22, 0.95);
+    border: 1px solid #2e2a26;
+    border-radius: 20px;
+    box-shadow: 0 0 0 1px rgba(200,151,74,0.05), 0 40px 80px rgba(0,0,0,0.6), 0 0 60px rgba(200,151,74,0.04);
+    backdrop-filter: blur(16px);
     position: relative;
     z-index: 1;
+    overflow: hidden;
     animation: fadeUp 0.8s 0.15s ease both;
+}
+
+.form-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 40px;
+    width: 58px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--gold), var(--gold-light));
+    box-shadow: 0 0 18px rgba(232,201,122,0.36);
 }
 
 .form-header {
@@ -204,7 +259,7 @@ body {
 }
 
 .step-indicator {
-    display: flex;
+    display: none;
     align-items: center;
     gap: 8px;
     margin-bottom: 20px;
@@ -224,7 +279,7 @@ body {
 }
 
 .step.done {
-    background: var(--ink);
+    background: var(--gold-light);
 }
 
 .step-label {
@@ -280,7 +335,7 @@ body {
     transition: color 0.3s;
 }
 
-.field:focus-within label { color: var(--ink); }
+.field:focus-within label { color: var(--gold-light); }
 
 .input-wrap {
     position: relative;
@@ -302,17 +357,25 @@ body {
 .field select,
 .field textarea {
     width: 100%;
-    background: #1a1a1a;   /* 🔥 qora fon */
-    border: 1.5px solid #333;
-    border-radius: 0;
-    padding: 14px 14px 14px 42px;
+    background: #101114;
+    border: 1px solid rgba(255,255,255,0.11);
+    border-radius: 6px;
+    padding: 14px 44px 14px 42px;
     font-family: 'DM Sans', sans-serif;
     font-size: 15px;
-    color: #fff;           /* 🔥 oq text */
+    color: var(--ink);
     outline: none;
-    transition: border-color 0.3s, box-shadow 0.3s;
+    transition: border-color 0.25s, box-shadow 0.25s, background 0.25s;
     appearance: none;
+    box-sizing: border-box;
 }
+
+/* Ko'z tugmasi faqat parol maydonlarida; boshqa inputlarda o'ng padding kerak emas */
+.field input:not([type="password"]) { padding-right: 14px; }
+.field input[type="password"]::-ms-reveal { display: none; }
+
+.field input::placeholder,
+.field textarea::placeholder { color: #77777b; }
 
 .field input.no-icon,
 .field select.no-icon {
@@ -322,8 +385,9 @@ body {
 .field input:focus,
 .field select:focus,
 .field textarea:focus {
-    border-color: var(--gold);
-    box-shadow: 0 0 0 3px rgba(201,168,76,0.12);
+    border-color: rgba(232,201,122,0.72);
+    background: #141519;
+    box-shadow: 0 0 0 3px rgba(201,168,76,0.1), 0 8px 24px rgba(0,0,0,0.16);
 }
 
 .field input.error,
@@ -381,7 +445,7 @@ body {
     transition: color 0.2s;
 }
 
-.toggle-pass:hover { color: var(--ink); }
+.toggle-pass:hover { color: var(--gold-light); }
 
 /* GENDER RADIO */
 .radio-group {
@@ -404,8 +468,9 @@ body {
     justify-content: center;
     gap: 8px;
     padding: 12px;
-    border: 1.5px solid var(--border);
-    background: var(--white);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 6px;
+    background: #101114;
     cursor: pointer;
     font-size: 13px;
     font-weight: 500;
@@ -417,8 +482,9 @@ body {
 
 .radio-card input:checked + label {
     border-color: var(--gold);
-    color: var(--ink);
-    background: rgba(201,168,76,0.07);
+    color: var(--gold-light);
+    background: rgba(201,168,76,0.09);
+    box-shadow: inset 0 0 0 1px rgba(201,168,76,0.14);
 }
 
 /* INTERESTS */
@@ -430,8 +496,8 @@ body {
 
 .interest-chip {
     padding: 7px 14px;
-    border: 1.5px solid var(--border);
-    background: var(--white);
+    border: 1px solid rgba(255,255,255,0.12);
+    background: #17181c;
     font-size: 12px;
     color: var(--muted);
     cursor: pointer;
@@ -514,14 +580,14 @@ body {
 
 .btn-next {
     flex: 1;
-    background: var(--ink);
-    color: var(--cream);
+    background: linear-gradient(110deg, var(--gold), var(--gold-light));
+    color: #15130e;
     border: none;
     padding: 16px 28px;
     font-family: 'DM Sans', sans-serif;
     font-size: 14px;
-    font-weight: 500;
-    letter-spacing: 0.1em;
+    font-weight: 700;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     cursor: pointer;
     position: relative;
@@ -533,7 +599,7 @@ body {
     content: '';
     position: absolute;
     inset: 0;
-    background: var(--gold);
+    background: #f0d894;
     transform: translateX(-101%);
     transition: transform 0.35s cubic-bezier(0.77,0,0.18,1);
 }
@@ -542,7 +608,7 @@ body {
 
 .btn-next span { position: relative; z-index: 1; }
 
-.btn-next:hover span { color: var(--ink); }
+.btn-next:hover span { color: #15130e; }
 
 .btn-next:active { transform: scale(0.98); }
 
@@ -555,16 +621,16 @@ body {
 }
 
 .signin-link a {
-    color: var(--ink);
+    color: var(--gold-light);
     font-weight: 500;
     text-decoration: none;
-    border-bottom: 1px solid var(--ink);
+    border-bottom: 1px solid rgba(232,201,122,0.5);
     padding-bottom: 1px;
     transition: color 0.2s, border-color 0.2s;
 }
 
 .signin-link a:hover {
-    color: var(--gold);
+    color: #f2d995;
     border-color: var(--gold);
 }
 
@@ -619,7 +685,7 @@ body {
 .divider::before, .divider::after {
     content: ''; flex: 1;
     height: 1px;
-    background: var(--border);
+    background: rgba(255,255,255,0.12);
 }
 
 .divider span {
@@ -638,8 +704,9 @@ body {
     flex: 1;
     display: flex; align-items: center; justify-content: center; gap: 10px;
     padding: 12px;
-    border: 1.5px solid var(--border);
-    background: var(--white);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 6px;
+    background: #17181c;
     cursor: pointer;
     font-family: 'DM Sans', sans-serif;
     font-size: 13px;
@@ -649,9 +716,9 @@ body {
 }
 
 .social-btn:hover {
-    border-color: var(--ink);
-    background: var(--ink);
-    color: var(--white);
+    border-color: var(--gold);
+    background: rgba(201,168,76,0.1);
+    color: var(--gold-light);
 }
 
 @keyframes fadeUp {
@@ -662,9 +729,55 @@ body {
 /* RESPONSIVE */
 @media (max-width: 768px) {
     body { flex-direction: column; }
-    .left-panel { width: 100%; padding: 40px 28px; min-height: 260px; }
-    .left-headline h1 { font-size: 36px; }
-    .bg-number { display: none; }
-    .right-panel { padding: 40px 24px; }
+    .right-panel { padding: 24px 16px; }
+    .form-container { padding: 34px 22px 28px; }
+    .form-container::before { left: 22px; }
     .field-row { grid-template-columns: 1fr; }
 }
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* =========================================
+   QO'SHIMCHA: form elementlari
+========================================= */
+.btn-row { margin-top: 26px; }
+
+/* Strength bar (register.html) */
+.strength-bar {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+}
+.strength-segment {
+    flex: 1;
+    height: 4px;
+    border-radius: 3px;
+    background: var(--border);
+    transition: background .25s;
+}
+.strength-text {
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+/* Field error yozuvlari */
+.field-error {
+    display: none;
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--rust, #c0392b);
+}
+.field-error.visible { display: block; }
+
+/* main.css bilan konfliktni yumshatish: register sahifasida
+   `.container` va `.card` klasslari ishlatilmaydi, lekin global
+   `.card` uslubi bo'lsa ham buzilmasligi uchun. */
+.right-panel .form-container { position: relative; z-index: 2; }

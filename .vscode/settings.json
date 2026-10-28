@@ -1,7 +1,9 @@
 {
-    "python.testing.pytestArgs": [
-        "templates"
-    ],
-    "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true
+  "python.testing.pytestArgs": [
+    "main",
+    "accounts"
+  ],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true,
+  "python.envFile": "${workspaceFolder}/.env"
 }
