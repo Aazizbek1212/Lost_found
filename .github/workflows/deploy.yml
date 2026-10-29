@@ -1,0 +1,62 @@
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: >-
+      ${{ github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push') }}
+
+    steps:
+      - name: SSH sozlash
+        env:
+          SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          ssh-keyscan -H "$SERVER_HOST" >> ~/.ssh/known_hosts
+
+      - name: Serverga deploy
+        env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+        run: |
+          ssh -i ~/.ssh/id_deploy "$SERVER_USER@$SERVER_HOST" 'bash -s' <<'EOF'
+          set -euo pipefail
+          cd ~/topildi
+
+          git fetch origin main
+          git reset --hard origin/main
+
+          docker compose build
+          docker compose run --rm web python manage.py migrate --noinput
+          docker compose up -d
+          docker compose exec -T web python manage.py collectstatic --noinput
+          docker image prune -f
+
+          for i in $(seq 1 15); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' -H 'Host: fndr.uz' http://127.0.0.1:8000/ || true)
+            if [ "$code" = "200" ]; then
+              echo "Sayt javob berdi: $code"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Tekshiruv muvaffaqiyatsiz"
+          docker compose logs web --tail 50
+          exit 1
+          EOF
