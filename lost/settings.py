@@ -177,6 +177,9 @@ LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "home"
 LOGOUT_REDIRECT_URL = "home"
 
+# Nginx (HTTPS) orqasida ishlash uchun
+CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS", [])
+
 # Production xavfsizligi uchun (DEBUG=False bo'lganda yoqiladi)
 if not DEBUG:
     SECURE_CONTENT_TYPE_NOSNIFF = True
@@ -185,3 +188,4 @@ if not DEBUG:
     SECURE_SSL_REDIRECT = env_bool("DJANGO_SECURE_SSL_REDIRECT", False)
     SESSION_COOKIE_SECURE = env_bool("DJANGO_SECURE_COOKIES", False)
     CSRF_COOKIE_SECURE = env_bool("DJANGO_SECURE_COOKIES", False)
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
