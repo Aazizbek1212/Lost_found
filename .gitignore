@@ -211,3 +211,7 @@ test_db.sqlite3
 test_db.sqlite3-journal
 qa-*.png
 srv-*.log
+
+# Production artefaktlar
+/static/
+/media/
