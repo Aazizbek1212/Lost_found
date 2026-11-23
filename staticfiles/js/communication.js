@@ -46,8 +46,9 @@
         const headers = { ...(options.headers || {}) };
         if (options.method && options.method !== 'GET') headers['X-CSRFToken'] = csrfToken();
         const response = await fetch(url, { ...options, headers });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        return response.json();
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+        return data;
     }
 
     function setUnreadCount(count) {
@@ -65,7 +66,10 @@
     /* ---------------- PROFIL ---------------- */
 
     function renderProfile(data) {
+        document.getElementById('profile-email').textContent = data.email || '—';
         document.getElementById('profile-phone').textContent = data.phone || '—';
+        document.getElementById('profile-email-input').value = data.email || '';
+        document.getElementById('profile-phone-input').value = data.phone || '';
         document.getElementById('profile-stat-active').textContent = data.stats.active;
         document.getElementById('profile-stat-closed').textContent = data.stats.closed;
         document.getElementById('profile-stat-rate').textContent = data.stats.success_rate + '%';
@@ -140,6 +144,49 @@
         } catch (error) {
             document.getElementById('profile-items').textContent = 'Ma’lumotlarni yuklab bo‘lmadi.';
         }
+    }
+
+    const profileEditToggle = document.getElementById('profile-edit-toggle');
+    const profileEditForm = document.getElementById('profile-edit-form');
+    const profileEditCancel = document.getElementById('profile-edit-cancel');
+    const profileEditFeedback = document.getElementById('profile-edit-feedback');
+
+    if (profileEditToggle && profileEditForm) {
+        profileEditToggle.addEventListener('click', () => {
+            profileEditForm.hidden = false;
+            profileEditToggle.hidden = true;
+            document.getElementById('profile-email-input').focus();
+        });
+
+        profileEditCancel.addEventListener('click', () => {
+            profileEditForm.hidden = true;
+            profileEditToggle.hidden = false;
+            profileEditFeedback.textContent = '';
+        });
+
+        profileEditForm.addEventListener('submit', async event => {
+            event.preventDefault();
+            const saveButton = profileEditForm.querySelector('.profile-edit-save');
+            saveButton.disabled = true;
+            profileEditFeedback.textContent = '';
+
+            try {
+                const formData = new FormData(profileEditForm);
+                const data = await apiRequest(PROFILE_API, {
+                    method: 'POST',
+                    body: new URLSearchParams(formData),
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                });
+                document.getElementById('profile-email').textContent = data.email || '—';
+                document.getElementById('profile-phone').textContent = data.phone || '—';
+                profileEditForm.hidden = true;
+                profileEditToggle.hidden = false;
+            } catch (error) {
+                profileEditFeedback.textContent = error.message || 'Saqlashda xatolik yuz berdi.';
+            } finally {
+                saveButton.disabled = false;
+            }
+        });
     }
 
     window.openProfileModal = () => {

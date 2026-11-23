@@ -481,8 +481,32 @@
 
 .profile-details { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 0 0 18px; }
 .profile-details > div { min-width: 0; padding: 12px 14px; border: 1px solid rgba(255,255,255,.07); border-radius: 12px; background: #1b1d23; }
-.profile-details dt { margin-bottom: 5px; color: #92969f; font: 500 10px 'Outfit', sans-serif; text-transform: uppercase; letter-spacing: .08em; }
-.profile-details dd { margin: 0; color: #eceae4; font: 500 13px 'Outfit', sans-serif; overflow-wrap: anywhere; }
+.profile-detail-label { display: block; margin-bottom: 5px; color: #92969f; font: 500 10px 'Outfit', sans-serif; text-transform: uppercase; letter-spacing: .08em; }
+.profile-detail-value { display: block; margin: 0; color: #eceae4; font: 500 13px 'Outfit', sans-serif; overflow-wrap: anywhere; }
+
+.profile-edit-toggle {
+    width: 100%; margin: -8px 0 18px; min-height: 38px;
+    border: 1px solid rgba(201,168,76,.28); border-radius: 10px;
+    background: rgba(201,168,76,.08); color: #d6b86a; font: 600 12px 'Outfit', sans-serif;
+    cursor: pointer;
+}
+.profile-edit-form {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px;
+    margin: -8px 0 18px; padding: 14px;
+    border: 1px solid rgba(255,255,255,.07); border-radius: 12px; background: #1b1d23;
+}
+.profile-edit-form[hidden] { display: none; }
+.profile-edit-form label { grid-row: 1; align-self: end; color: #92969f; font: 500 10px 'Outfit', sans-serif; text-transform: uppercase; }
+.profile-edit-form input {
+    grid-row: 2; min-width: 0; min-height: 40px; padding: 0 11px;
+    border: 1px solid rgba(255,255,255,.1); border-radius: 8px;
+    background: #111319; color: #eceae4; font: 500 13px 'Outfit', sans-serif;
+}
+.profile-edit-feedback { grid-column: 1 / -1; min-height: 18px; margin: 2px 0 0; color: #ff9d9d; font: 500 12px 'Outfit', sans-serif; }
+.profile-edit-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 8px; }
+.profile-edit-actions button { min-height: 38px; padding: 0 14px; border-radius: 8px; cursor: pointer; font: 600 12px 'Outfit', sans-serif; }
+.profile-edit-cancel { border: 1px solid rgba(255,255,255,.1); background: transparent; color: #b7bac3; }
+.profile-edit-save { border: 0; background: #c9a84c; color: #111319; }
 
 .profile-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 26px; }
 .profile-stat {
@@ -560,6 +584,9 @@
     .site-create-button { min-height: 34px; padding: 0 10px; font-size: 11px; }
 
     .profile-details, .profile-stats { grid-template-columns: 1fr; }
+    .profile-edit-form { grid-template-columns: 1fr; }
+    .profile-edit-form label { grid-row: auto; }
+    .profile-edit-form input { grid-row: auto; }
     .profile-item { flex-direction: column; align-items: stretch; }
     .profile-close-btn { width: 100%; }
 }

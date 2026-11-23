@@ -40,6 +40,8 @@ jobs:
           cd ~/topildi
 
           git fetch origin main
+          chmod -R u+rwX ~/topildi/static 2>/dev/null || true
+          find ~/topildi/static -type d -exec chmod u+rwx {} + 2>/dev/null || true
           git reset --hard origin/main
 
           docker compose build
