@@ -43,11 +43,18 @@ jobs:
           chmod -R u+rwX ~/topildi/static 2>/dev/null || true
           find ~/topildi/static -type d -exec chmod u+rwx {} + 2>/dev/null || true
           git reset --hard origin/main
+          echo "Serverda deploy qilinayotgan commit: $(git rev-parse --short HEAD)"
 
-          docker compose build
+          docker compose build --no-cache
           docker compose run --rm web python manage.py migrate --noinput
-          docker compose up -d
+          docker compose up -d --force-recreate
           docker compose exec -T web python manage.py collectstatic --clear --noinput
+          docker compose restart web
+
+          echo "Template holati:"
+          grep -n "profile-edit-toggle" templates/partials/communication_modals.html
+          echo "Statik holati:"
+          grep -n "arcgisonline\\|profile-edit-toggle" staticfiles/js/app.js staticfiles/js/communication.js staticfiles/styles/communication.css 2>/dev/null || true
           docker image prune -f
 
           for i in $(seq 1 15); do
