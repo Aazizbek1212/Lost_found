@@ -9,8 +9,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="{% static 'styles/main.css' %}" />
-<link rel="stylesheet" href="{% static 'styles/communication.css' %}" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="{% static 'styles/communication.css' %}?v=20261123" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
 
@@ -353,11 +353,11 @@
 </div>
 {% endif %}
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="{% static 'js/app.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="{% static 'js/app.js' %}?v=20261123"></script>
 {% if user.is_authenticated %}
 <script src="{% static 'js/chat.js' %}"></script>
-<script src="{% static 'js/communication.js' %}"></script>
+<script src="{% static 'js/communication.js' %}?v=20261123"></script>
 {% endif %}
 
 </body>

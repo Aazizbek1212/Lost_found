@@ -47,7 +47,7 @@ jobs:
           docker compose build
           docker compose run --rm web python manage.py migrate --noinput
           docker compose up -d
-          docker compose exec -T web python manage.py collectstatic --noinput
+          docker compose exec -T web python manage.py collectstatic --clear --noinput
           docker image prune -f
 
           for i in $(seq 1 15); do

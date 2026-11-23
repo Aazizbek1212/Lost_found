@@ -11,7 +11,7 @@
     <!-- Main CSS -->
     <link rel="stylesheet" href="{% static 'styles/main.css' %}">
     <link rel="stylesheet" href="{% static 'styles/register.css' %}">
-    <link rel="stylesheet" href="{% static 'styles/communication.css' %}">
+    <link rel="stylesheet" href="{% static 'styles/communication.css' %}?v=20261123">
 </head>
 <body class="auth-layout">
     {% include 'partials/site_navigation.html' %}
@@ -165,7 +165,7 @@
     {% endif %}
     <script src="{% static 'js/register.js' %}"></script>
     {% if user.is_authenticated %}
-    <script src="{% static 'js/communication.js' %}"></script>
+    <script src="{% static 'js/communication.js' %}?v=20261123"></script>
     {% endif %}
 </body>
 </html>
