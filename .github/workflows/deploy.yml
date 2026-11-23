@@ -58,7 +58,7 @@ jobs:
           docker image prune -f
 
           for i in $(seq 1 15); do
-            code=$(curl -s -o /dev/null -w '%{http_code}' -H 'Host: 3.70.231.183' http://127.0.0.1:8000/ || true)
+            code=$(curl -s -o /dev/null -w '%{http_code}' -H 'Host: 63.184.46.46' http://127.0.0.1:8000/ || true)
             if [ "$code" = "200" ]; then
               echo "Sayt javob berdi: $code"
               exit 0
