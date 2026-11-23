@@ -19,7 +19,7 @@ from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import CreateView
 
 from .forms import ItemForm
-from .models import Category, ChatMessage, Comment, Item, Notification, Report, SupportMessage, SupportThread
+from .models import Category, ChatMessage, Comment, Item, Notification, Profile, Report, SupportMessage, SupportThread
 from .utils import get_address_from_coordinates, get_coordinates, send_notification
 
 logger = logging.getLogger(__name__)
@@ -706,9 +706,43 @@ class ReportItemView(LoginRequiredMixin, View):
 # Profil va e'lonni yopish
 # ---------------------------------------------------------------------------
 @login_required
-@require_GET
+@require_http_methods(["GET", "POST"])
 def user_profile(request):
     user = request.user
+
+    if request.method == "POST":
+        email = (request.POST.get("email") or "").strip()
+        phone = (request.POST.get("phone") or "").strip()
+
+        if email:
+            from django.core.exceptions import ValidationError
+            from django.core.validators import validate_email
+            try:
+                validate_email(email)
+            except ValidationError:
+                return JsonResponse(
+                    {"success": False, "error": "Email manzili noto'g'ri."},
+                    status=400,
+                )
+
+        if len(phone) > 30:
+            return JsonResponse(
+                {"success": False, "error": "Telefon raqami 30 belgidan oshmasligi kerak."},
+                status=400,
+            )
+
+        user.email = email
+        user.save(update_fields=["email"])
+        profile, _ = Profile.objects.get_or_create(user=user)
+        profile.phone = phone
+        profile.save(update_fields=["phone"])
+
+        return JsonResponse({
+            "success": True,
+            "email": user.email,
+            "phone": profile.phone,
+        })
+
     items = list(Item.objects.filter(user=user).order_by('-date', '-id'))
 
     # Adminga yopish so'rovi yuborilgan, lekin hali ko'rilmagan e'lonlar
@@ -744,6 +778,7 @@ def user_profile(request):
     profile = getattr(user, 'profile', None)
 
     return JsonResponse({
+        'email': user.email,
         'phone': getattr(profile, 'phone', '') or '',
         'stats': {
             'active': active,

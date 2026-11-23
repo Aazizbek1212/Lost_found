@@ -57,11 +57,24 @@
                 <div class="profile-name">{{ user.username }}</div>
             </div>
 
-            <dl class="profile-details">
-                <div><dt>Email</dt><dd>{{ user.email|default:"—" }}</dd></div>
-                <div><dt>Telefon</dt><dd id="profile-phone">—</dd></div>
-                <div><dt>Ro'yxatdan o'tgan</dt><dd>{{ user.date_joined|date:"d.m.Y" }}</dd></div>
-            </dl>
+            <div class="profile-details">
+                <div><span class="profile-detail-label">Email</span><strong class="profile-detail-value" id="profile-email">{{ user.email|default:"—" }}</strong></div>
+                <div><span class="profile-detail-label">Telefon</span><strong class="profile-detail-value" id="profile-phone">—</strong></div>
+                <div><span class="profile-detail-label">Ro'yxatdan o'tgan</span><strong class="profile-detail-value">{{ user.date_joined|date:"d.m.Y" }}</strong></div>
+            </div>
+            <button type="button" class="profile-edit-toggle" id="profile-edit-toggle">Ma'lumotlarni tahrirlash</button>
+
+            <form class="profile-edit-form" id="profile-edit-form" hidden>
+                <label for="profile-email-input">Email</label>
+                <input id="profile-email-input" name="email" type="email" value="{{ user.email }}" autocomplete="email">
+                <label for="profile-phone-input">Telefon</label>
+                <input id="profile-phone-input" name="phone" type="tel" placeholder="+998 90 123 45 67" autocomplete="tel">
+                <p class="profile-edit-feedback" id="profile-edit-feedback" role="status"></p>
+                <div class="profile-edit-actions">
+                    <button type="button" class="profile-edit-cancel" id="profile-edit-cancel">Bekor qilish</button>
+                    <button type="submit" class="profile-edit-save">Saqlash</button>
+                </div>
+            </form>
 
             <div class="profile-stats">
                 <div class="profile-stat">

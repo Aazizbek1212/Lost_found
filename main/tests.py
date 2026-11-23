@@ -10,7 +10,7 @@ from django.urls import reverse
 
 from .admin import SupportThreadAdmin
 from .forms import ItemForm
-from .models import Item, Location, Notification, SupportMessage, SupportThread
+from .models import Item, Location, Notification, Profile, SupportMessage, SupportThread
 
 
 class UserNotificationTests(TestCase):
@@ -79,6 +79,41 @@ class UserNotificationTests(TestCase):
         other_notification.refresh_from_db()
         self.assertTrue(own_notification.is_read)
         self.assertFalse(other_notification.is_read)
+
+
+class ProfileUpdateTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="profile-user",
+            email="old@example.com",
+        )
+        Profile.objects.create(user=self.user, phone="+998901111111")
+        self.client.force_login(self.user)
+
+    def test_profile_get_and_post_update_email_and_phone(self):
+        response = self.client.get(reverse("user_profile"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["email"], "old@example.com")
+        self.assertEqual(response.json()["phone"], "+998901111111")
+
+        response = self.client.post(
+            reverse("user_profile"),
+            {"email": "new@example.com", "phone": "+998907777777"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["success"])
+
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.email, "new@example.com")
+        self.assertEqual(self.user.profile.phone, "+998907777777")
+
+    def test_profile_rejects_invalid_email(self):
+        response = self.client.post(
+            reverse("user_profile"),
+            {"email": "invalid-email", "phone": "+998901234567"},
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Email", response.json()["error"])
 
 
 class SupportChatTests(TestCase):
